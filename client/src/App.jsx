@@ -11,7 +11,10 @@ import { useAppContext } from "./context/AppContext";
 import Auth from "./modals/Auth";
 import ProductCategory from "./pages/ProductCategory";
 import Address from "./pages/Address";
-import MyOrders from "./pages/MyOrders";
+import ProfileLayout from "./pages/profile/ProfileLayout";
+import ProfileInfo from "./pages/profile/ProfileInfo";
+import ProfileOrders from "./pages/profile/ProfileOrders";
+import ProfileAddresses from "./pages/profile/ProfileAddresses";
 import SellerLogin from "./components/seller/SellerLogin";
 import SellerLayout from "./pages/seller/SellerLayout";
 import AddProduct from "./pages/seller/AddProduct";
@@ -41,7 +44,12 @@ const App = () => {
             <Route path="/product/:category/:id" element={<PageTransition><SingleProduct /></PageTransition>} />
             <Route path="/cart" element={<PageTransition><Cart /></PageTransition>} />
             <Route path="/add-address" element={<PageTransition><Address /></PageTransition>} />
-            <Route path="/my-orders" element={<PageTransition><MyOrders /></PageTransition>} />
+            <Route path="/profile" element={<PageTransition><ProfileLayout /></PageTransition>}>
+              <Route index element={<ProfileInfo />} />
+              <Route path="info" element={<ProfileInfo />} />
+              <Route path="orders" element={<ProfileOrders />} />
+              <Route path="addresses" element={<ProfileAddresses />} />
+            </Route>
             <Route
               path="/seller"
               element={isSeller ? <PageTransition><SellerLayout /></PageTransition> : <PageTransition><SellerLogin /></PageTransition>}

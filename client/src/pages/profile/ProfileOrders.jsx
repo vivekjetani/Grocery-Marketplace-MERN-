@@ -1,10 +1,10 @@
 import { useContext, useEffect, useState } from "react";
-import { AppContext } from "../context/AppContext";
+import { AppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 import { Package, ArrowLeft } from "lucide-react";
 
-const MyOrders = () => {
+const ProfileOrders = () => {
   const [myOrders, setMyOrders] = useState([]);
   const { axios, user, navigate } = useContext(AppContext);
   const fetchOrders = async () => {
@@ -18,14 +18,15 @@ const MyOrders = () => {
   useEffect(() => { if (user) fetchOrders(); }, [user]);
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-10 md:mt-16 pb-16 max-w-5xl mx-auto">
-      <div className="flex items-center gap-4 mb-8">
-        <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 transition-colors">
-          <ArrowLeft size={20} />
-        </button>
-        <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white">My Orders</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{myOrders.length} order{myOrders.length !== 1 ? 's' : ''} placed</p>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-5xl mx-auto">
+      <div className="flex items-center gap-3 mb-6 bg-white dark:bg-slate-800 p-4 md:p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-full bg-gradient-to-l from-primary/5 to-transparent"></div>
+        <div className="w-12 h-12 bg-primary/10 dark:bg-primary/20 rounded-2xl flex items-center justify-center text-primary shrink-0 relative z-10">
+          <Package size={24} />
+        </div>
+        <div className="relative z-10">
+          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">Order History</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">{myOrders.length} order{myOrders.length !== 1 ? 's' : ''} placed</p>
         </div>
       </div>
 
@@ -79,4 +80,4 @@ const MyOrders = () => {
     </motion.div>
   );
 };
-export default MyOrders;
+export default ProfileOrders;
