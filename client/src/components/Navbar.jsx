@@ -3,12 +3,14 @@ import { Link } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { assets } from "../assets/assets";
 import toast from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
+import DarkModeToggle from "./DarkModeToggle";
+
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const {
     user,
     setUser,
-    showUserLogin,
     setShowUserLogin,
     navigate,
     searchQuery,
@@ -31,88 +33,68 @@ const Navbar = () => {
       toast.error(error.message);
     }
   };
+
   useEffect(() => {
     if (searchQuery.length > 0) {
       navigate("/products");
     }
-  }, []);
+  }, [searchQuery]);
+
   return (
-    <nav className="flex items-center justify-between px-6 md:px-16 lg:px-24 xl:px-32 py-4 border-b border-gray-300 bg-white relative transition-all">
-      <Link to="/">
-        <h2 className="text-2xl font-bold text-primary">Grocery App</h2>
+    <nav className="flex items-center justify-between px-6 md:px-16 lg:px-24 xl:px-32 py-4 sticky top-0 z-50 transition-all border-b border-white/20 dark:border-slate-800 bg-white/70 dark:bg-black backdrop-blur-md shadow-lg dark:shadow-black/20">
+      <Link to="/" className="group">
+        <h2 className="text-2xl font-bold text-gradient dark:text-gradient-dark group-hover:scale-105 transition-transform">
+          Grocery App
+        </h2>
       </Link>
 
       {/* Desktop Menu */}
-      <div className="hidden sm:flex items-center gap-8">
-        <Link to={"/"}>Home</Link>
-        <Link to={"/products"}>All Products</Link>
+      <div className="hidden sm:flex items-center gap-8 font-medium">
+        <Link to="/" className="hover:text-primary dark:hover:text-primary-dark transition-colors">
+          Home
+        </Link>
+        <Link to="/products" className="hover:text-primary dark:hover:text-primary-dark transition-colors">
+          All Products
+        </Link>
 
-        <div className="hidden lg:flex items-center text-sm gap-2 border border-gray-300 px-3 rounded-full">
+        <div className="hidden lg:flex items-center text-sm gap-2 border border-slate-300 dark:border-slate-600 px-4 py-1.5 rounded-full bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus-within:ring-2 focus-within:ring-primary/50 transition-all">
           <input
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="py-1.5 w-full bg-transparent outline-none placeholder-gray-500"
+            value={searchQuery}
+            className="w-full bg-transparent outline-none placeholder-slate-500 dark:placeholder-slate-400 dark:text-white"
             type="text"
             placeholder="Search products"
           />
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M10.836 10.615 15 14.695"
-              stroke="#7A7B7D"
-              stroke-width="1.2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <path
-              clip-rule="evenodd"
-              d="M9.141 11.738c2.729-1.136 4.001-4.224 2.841-6.898S7.67.921 4.942 2.057C2.211 3.193.94 6.281 2.1 8.955s4.312 3.92 7.041 2.783"
-              stroke="#7A7B7D"
-              stroke-width="1.2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10.836 10.615 15 14.695" stroke="currentColor" className="text-slate-500 dark:text-slate-400" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+            <path clipRule="evenodd" d="M9.141 11.738c2.729-1.136 4.001-4.224 2.841-6.898S7.67.921 4.942 2.057C2.211 3.193.94 6.281 2.1 8.955s4.312 3.92 7.041 2.783" stroke="currentColor" className="text-slate-500 dark:text-slate-400" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
 
-        <div
+        <DarkModeToggle />
+
+        <motion.div
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
           onClick={() => navigate("/cart")}
           className="relative cursor-pointer"
         >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 14 14"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M.583.583h2.333l1.564 7.81a1.17 1.17 0 0 0 1.166.94h5.67a1.17 1.17 0 0 0 1.167-.94l.933-4.893H3.5m2.333 8.75a.583.583 0 1 1-1.167 0 .583.583 0 0 1 1.167 0m6.417 0a.583.583 0 1 1-1.167 0 .583.583 0 0 1 1.167 0"
-              stroke="#615fff"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
+          <svg width="22" height="22" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M.583.583h2.333l1.564 7.81a1.17 1.17 0 0 0 1.166.94h5.67a1.17 1.17 0 0 0 1.167-.94l.933-4.893H3.5m2.333 8.75a.583.583 0 1 1-1.167 0 .583.583 0 0 1 1.167 0m6.417 0a.583.583 0 1 1-1.167 0 .583.583 0 0 1 1.167 0" stroke="currentColor" className="text-primary dark:text-primary-dark" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
           </svg>
-          <button className="absolute -top-2 -right-3 text-xs text-white bg-indigo-500 w-[18px] h-[18px] rounded-full">
+          <span className="absolute -top-2 -right-3 text-[10px] font-bold text-white bg-secondary w-5 h-5 flex items-center justify-center rounded-full shadow-md shadow-secondary/50">
             {cartCount()}
-          </button>
-        </div>
+          </span>
+        </motion.div>
 
         {user ? (
           <div className="relative group">
-            <img src={assets.profile_icon} alt="" className="w-10" />
-            <ul className="hidden group-hover:block absolute top-10 roght-0 bg-white shadow border border-gray-200 py-2 w-30 rounded-md z-40 text-sm">
-              <li
-                onClick={() => navigate("/my-orders")}
-                className="p-1.5 cursor-pointer"
-              >
+            <img src={assets.profile_icon} alt="Profile" className="w-10 h-10 rounded-full border-2 border-primary/20 cursor-pointer object-cover" />
+            <ul className="hidden group-hover:block absolute top-[110%] right-0 bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 py-2 w-32 rounded-xl z-40 text-sm overflow-hidden backdrop-blur-xl">
+              <li onClick={() => navigate("/my-orders")} className="px-4 py-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                 My Orders
               </li>
-              <li className="cursor-pointer p-1.5" onClick={logout}>
+              <li className="px-4 py-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 text-red-500 transition-colors" onClick={logout}>
                 Logout
               </li>
             </ul>
@@ -123,108 +105,79 @@ const Navbar = () => {
               setOpen(false);
               setShowUserLogin(true);
             }}
-            className="cursor-pointer px-8 py-2 bg-indigo-500 hover:bg-indigo-600 transition text-white rounded-full"
+            className="cursor-pointer px-6 py-2 bg-gradient-to-r from-primary to-accent hover:from-accent hover:to-primary transition-all text-white rounded-full font-medium shadow-lg shadow-primary/30 hover:shadow-primary/50 active:scale-95"
           >
-            Login
+            Log In
           </button>
         )}
       </div>
-      <div className="flex items-center gap-6 md:hidden">
-        <div
-          className="relative cursor-pointer"
-          onClick={() => navigate("/cart")}
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 14 14"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M.583.583h2.333l1.564 7.81a1.17 1.17 0 0 0 1.166.94h5.67a1.17 1.17 0 0 0 1.167-.94l.933-4.893H3.5m2.333 8.75a.583.583 0 1 1-1.167 0 .583.583 0 0 1 1.167 0m6.417 0a.583.583 0 1 1-1.167 0 .583.583 0 0 1 1.167 0"
-              stroke="#615fff"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
+
+      {/* Mobile Right Controls */}
+      <div className="flex items-center gap-5 md:hidden">
+        <DarkModeToggle />
+
+        <div className="relative cursor-pointer" onClick={() => navigate("/cart")}>
+          <svg width="20" height="20" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M.583.583h2.333l1.564 7.81a1.17 1.17 0 0 0 1.166.94h5.67a1.17 1.17 0 0 0 1.167-.94l.933-4.893H3.5m2.333 8.75a.583.583 0 1 1-1.167 0 .583.583 0 0 1 1.167 0m6.417 0a.583.583 0 1 1-1.167 0 .583.583 0 0 1 1.167 0" stroke="currentColor" className="text-primary dark:text-primary-dark" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <button className="absolute -top-2 -right-3 text-xs text-white bg-indigo-500 w-[18px] h-[18px] rounded-full">
+          <span className="absolute -top-2 -right-3 text-[10px] font-bold text-white bg-secondary w-4 h-4 flex items-center justify-center rounded-full">
             {cartCount()}
-          </button>
+          </span>
         </div>
-        <button
-          onClick={() => (open ? setOpen(false) : setOpen(true))}
-          aria-label="Menu"
-          className="sm:hidden"
-        >
-          {/* Menu Icon SVG */}
-          <svg
-            width="21"
-            height="15"
-            viewBox="0 0 21 15"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <rect width="21" height="1.5" rx=".75" fill="#426287" />
-            <rect x="8" y="6" width="13" height="1.5" rx=".75" fill="#426287" />
-            <rect
-              x="6"
-              y="13"
-              width="15"
-              height="1.5"
-              rx=".75"
-              fill="#426287"
-            />
+
+        <button onClick={() => setOpen(!open)} aria-label="Menu" className="sm:hidden focus:outline-none">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" className="text-slate-700 dark:text-slate-300" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
       </div>
 
-      {/* Mobile Menu */}
-      <div
-        className={`${
-          open ? "flex" : "hidden"
-        } absolute top-[60px] left-0 w-full bg-white shadow-md py-4 flex-col items-start gap-2 px-5 text-sm md:hidden`}
-      >
-        <Link onClick={() => setOpen(false)} to={"/"}>
-          Home
-        </Link>
-        <Link onClick={() => setOpen(false)} to={"/products"}>
-          Products
-        </Link>
-
-        {user ? (
-          <div className="relative group">
-            <img src={assets.profile_icon} alt="" className="w-10" />
-            <ul className="hidden group-hover:block absolute top-10 roght-0 bg-white shadow border border-gray-200 py-2 w-30 rounded-md z-40 text-sm">
-              <li
-                onClick={() => navigate("/my-orders")}
-                className="p-1.5 cursor-pointer"
-              >
-                My Orders
-              </li>
-              <li
-                className="cursor-pointer p-1.5"
-                onClick={() => {
-                  setUser(null);
-                  navigate("/");
-                }}
-              >
-                Logout
-              </li>
-            </ul>
-          </div>
-        ) : (
-          <button
-            onClick={() => {
-              setOpen(false);
-              setShowUserLogin(true);
-            }}
-            className="cursor-pointer px-8 py-2 bg-indigo-500 hover:bg-indigo-600 transition text-white rounded-full"
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2 }}
+            className="absolute top-full left-0 w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-xl py-6 flex flex-col items-center gap-6 text-lg border-b border-slate-200 dark:border-slate-800 md:hidden z-40"
           >
-            Login
-          </button>
+            <Link onClick={() => setOpen(false)} to="/" className="hover:text-primary dark:hover:text-primary-dark transition-colors font-medium">
+              Home
+            </Link>
+            <Link onClick={() => setOpen(false)} to="/products" className="hover:text-primary dark:hover:text-primary-dark transition-colors font-medium">
+              All Products
+            </Link>
+
+            {user ? (
+              <div className="flex flex-col items-center gap-4">
+                <Link onClick={() => setOpen(false)} to="/my-orders" className="hover:text-primary dark:hover:text-primary-dark transition-colors font-medium">
+                  My Orders
+                </Link>
+                <button
+                  onClick={() => {
+                    logout();
+                    setOpen(false);
+                  }}
+                  className="px-8 py-2 border-2 border-red-500 text-red-500 rounded-full font-medium hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  setShowUserLogin(true);
+                }}
+                className="px-8 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-full font-medium shadow-lg hover:shadow-xl transition-all w-3/4 max-w-xs"
+              >
+                Log In
+              </button>
+            )}
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
     </nav>
   );
 };

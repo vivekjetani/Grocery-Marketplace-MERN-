@@ -15,6 +15,38 @@ export const AppContextProvider = ({ children }) => {
   const [products, setProducts] = useState([]);
   const [cartItems, setCartItems] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("theme") === "dark" || (!("theme" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    }
+    return false;
+  });
+
+  // Handle Auth Interceptor
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response && error.response.status === 401) {
+          // Suppress 401 unauthenticated toasts globally
+          return Promise.resolve({ data: { success: false, message: "Unauthenticated" } });
+        }
+        return Promise.reject(error);
+      }
+    );
+    return () => axios.interceptors.response.eject(interceptor);
+  }, []);
+
+  // Handle Dark mode class
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [isDarkMode]);
 
   // check seller status
   const fetchSeller = async () => {
@@ -37,11 +69,10 @@ export const AppContextProvider = ({ children }) => {
       if (data.success) {
         setUser(data.user);
         setCartItems(data.user.cart);
-      } else {
-        toast.error(data.message);
       }
+      // Silently handle unauthenticated state — no toast for guests
     } catch (error) {
-      toast.error(error.message);
+      // Silently handle auth check failure
     }
   };
 
@@ -93,7 +124,7 @@ export const AppContextProvider = ({ children }) => {
     let totalAmount = 0;
     for (const items in cartItems) {
       let itemInfo = products.find((product) => product._id === items);
-      if (cartItems[items] > 0) {
+      if (itemInfo && cartItems[items] > 0) {
         totalAmount += cartItems[items] * itemInfo.offerPrice;
       }
     }
@@ -131,7 +162,7 @@ export const AppContextProvider = ({ children }) => {
       }
     };
 
-    if (user) {
+    if (user && cartItems) {
       updateCart();
     }
   }, [cartItems]);
@@ -155,6 +186,8 @@ export const AppContextProvider = ({ children }) => {
     axios,
     fetchProducts,
     setCartItems,
+    isDarkMode,
+    setIsDarkMode,
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

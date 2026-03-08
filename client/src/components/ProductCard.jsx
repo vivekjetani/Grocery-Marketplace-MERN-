@@ -1,86 +1,107 @@
 import { assets } from "../assets/assets";
-import { useAppContext } from "../context/appContext";
+import { useAppContext } from "../context/AppContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 const ProductCard = ({ product }) => {
   const { addToCart, removeFromCart, cartItems, navigate } = useAppContext();
+
   return (
     product && (
-      <div
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-50px" }}
+        whileHover={{ y: -8 }}
         onClick={() => {
-          navigate(
-            `/product/${product.category.toLowerCase()}/${product?._id}`
-          );
-          scrollTo(0, 0);
+          navigate(`/product/${product.category.toLowerCase()}/${product?._id}`);
+          window.scrollTo({ top: 0, behavior: "smooth" });
         }}
-        className="border border-gray-500/20 rounded-md md:px-4 px-3 py-2 bg-white min-w-56 max-w-56 w-full"
+        className="group relative border border-slate-200 dark:border-slate-700/50 rounded-2xl p-4 bg-white dark:bg-slate-800 shadow-sm hover:shadow-xl dark:shadow-none dark:hover:shadow-primary/20 transition-all cursor-pointer overflow-hidden flex flex-col h-full"
       >
-        <div className="group cursor-pointer flex items-center justify-center px-2">
-          <img
-            className="group-hover:scale-105 transition max-w-26 md:max-w-36"
-            src={`http://localhost:5000/images/${product.image[0]}`}
+        {/* Glow effect */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+
+        <div className="flex items-center justify-center h-48 sm:h-52 bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 mb-4 overflow-hidden relative group-hover:bg-slate-100 dark:group-hover:bg-slate-900 transition-colors">
+          <motion.img
+            whileHover={{ scale: 1.1 }}
+            transition={{ duration: 0.4 }}
+            className="object-contain h-full w-full drop-shadow-md"
+            src={`${import.meta.env.VITE_BACKEND_URL}/images/${product.image[0]}`}
             alt={product.name}
           />
         </div>
-        <div className="text-gray-500/60 text-sm">
-          <p>{product.category}</p>
-          <p className="text-gray-700 font-medium text-lg truncate w-full">
+
+        <div className="flex flex-col flex-grow">
+          <p className="text-xs font-bold tracking-wider text-primary dark:text-primary-dark uppercase mb-1">{product.category}</p>
+          <p className="text-slate-900 dark:text-white font-semibold text-lg leading-tight line-clamp-2 mb-2">
             {product.name}
           </p>
-          <div className="flex items-center gap-0.5">
+
+          <div className="flex items-center gap-1 mb-4 mt-auto">
             {Array(5)
               .fill("")
               .map((_, i) => (
-                <img
-                  key={i}
-                  src={i < 4 ? assets.star_icon : assets.star_dull_icon}
-                  alt="rating"
-                  className="w-3 md:w-3.5"
-                />
+                <svg key={i} className={`w-4 h-4 ${i < 4 ? "text-amber-400 fill-amber-400" : "text-slate-300 dark:text-slate-600 fill-slate-300 dark:fill-slate-600"}`} viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
               ))}
-            <p>(4)</p>
+            <span className="text-xs text-slate-500 font-medium ml-1">(42)</span>
           </div>
-          <div className="flex items-end justify-between mt-3">
-            <p className="md:text-xl text-base font-medium text-indigo-500">
-              ${product.offerPrice}{" "}
-              <span className="text-gray-500/60 md:text-sm text-xs line-through">
-                ${product.price}
-              </span>
-            </p>
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className="text-indigo-500"
-            >
-              {!cartItems?.[product?._id] ? (
-                <button
-                  onClick={() => addToCart(product?._id)}
-                  className="flex items-center justify-center gap-1 bg-indigo-100 border border-indigo-300 md:w-[80px] w-[64px] h-[34px] rounded text-indigo-600 font-medium cursor-pointer"
-                >
-                  <img src={assets.cart_icon} alt="cart icon" />
-                  Add
-                </button>
-              ) : (
-                <div className="flex items-center justify-center gap-2 md:w-20 w-16 h-[34px] bg-indigo-500/25 rounded select-none">
-                  <button
-                    onClick={() => removeFromCart(product?._id)}
-                    className="cursor-pointer text-md px-2 h-full"
-                  >
-                    -
-                  </button>
-                  <span className="w-5 text-center">
-                    {cartItems[product?._id]}
-                  </span>
-                  <button
-                    onClick={() => addToCart(product?._id)}
-                    className="cursor-pointer text-md px-2 h-full"
-                  >
-                    +
-                  </button>
-                </div>
+
+          <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100 dark:border-slate-700">
+            <div className="flex flex-col">
+              <span className="text-xl font-bold text-slate-900 dark:text-white">${product.offerPrice.toFixed(2)}</span>
+              {product.price > product.offerPrice && (
+                <span className="text-xs font-medium text-slate-400 line-through">${product.price.toFixed(2)}</span>
               )}
+            </div>
+
+            <div onClick={(e) => e.stopPropagation()} className="z-10">
+              <AnimatePresence mode="wait">
+                {!cartItems?.[product?._id] ? (
+                  <motion.button
+                    key="addBtn"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => addToCart(product?._id)}
+                    className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white hover:bg-primary hover:text-white dark:hover:bg-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-slate-800"
+                    aria-label="Add to cart"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                  </motion.button>
+                ) : (
+                  <motion.div
+                    key="counter"
+                    initial={{ opacity: 0, width: 40 }}
+                    animate={{ opacity: 1, width: "auto" }}
+                    className="flex items-center justify-between h-10 px-2 bg-primary rounded-full text-white shadow-lg shadow-primary/30"
+                  >
+                    <button
+                      onClick={() => removeFromCart(product?._id)}
+                      className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4"></path></svg>
+                    </button>
+                    <span className="w-6 text-center font-bold text-sm">
+                      {cartItems[product?._id]}
+                    </span>
+                    <button
+                      onClick={() => addToCart(product?._id)}
+                      className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     )
   );
 };

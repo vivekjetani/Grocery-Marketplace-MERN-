@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "skills": {
+    "ai-image-generation": {
+      "source": "toolshell/skills",
+      "sourceType": "github",
+      "computedHash": "b78890183d9a5198692ce1ea466b47ff7a2501cfb43d68cc1b006ae03fbf0707"
+    },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "computedHash": "063a0e6448123cd359ad0044cc46b0e490cc7964d45ef4bb9fd842bd2ffbca67"
+    }
+  }
+}
