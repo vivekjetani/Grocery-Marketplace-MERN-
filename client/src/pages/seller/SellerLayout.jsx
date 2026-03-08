@@ -1,9 +1,13 @@
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { assets } from "../../assets/assets";
 import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
+import { AnimatePresence } from "framer-motion";
+import SubPageTransition from "../../components/SubPageTransition";
+
 const SellerLayout = () => {
   const { isSeller, setIsSeller, axios, navigate } = useAppContext();
+  const location = useLocation();
   const sidebarLinks = [
     { name: "Add Product", path: "/seller", icon: assets.add_icon },
     { name: "Product List", path: "/seller/product-list", icon: assets.product_list_icon },
@@ -35,7 +39,13 @@ const SellerLayout = () => {
             </NavLink>
           ))}
         </div>
-        <div className="flex-1 bg-slate-50 dark:bg-slate-950"><Outlet /></div>
+        <div className="flex-1 bg-slate-50 dark:bg-slate-950 overflow-hidden">
+          <AnimatePresence mode="wait">
+            <SubPageTransition key={location.pathname}>
+              <Outlet />
+            </SubPageTransition>
+          </AnimatePresence>
+        </div>
       </div>
     </>
   );

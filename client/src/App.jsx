@@ -37,7 +37,7 @@ const App = () => {
         className={`flex-grow ${isSellerPath ? "" : "px-6 md:px-16 lg:px-24 xl:px-32"}`}
       >
         <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
+          <Routes location={location} key={location.pathname.startsWith('/seller') ? 'seller' : location.pathname}>
             <Route path="/" element={<PageTransition><Home /></PageTransition>} />
             <Route path="/products" element={<PageTransition><Products /></PageTransition>} />
             <Route path="/products/:category" element={<PageTransition><ProductCategory /></PageTransition>} />
