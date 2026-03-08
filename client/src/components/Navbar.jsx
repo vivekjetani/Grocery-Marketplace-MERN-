@@ -8,6 +8,7 @@ import DarkModeToggle from "./DarkModeToggle";
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const {
     user,
     setUser,
@@ -35,17 +36,29 @@ const Navbar = () => {
   };
 
   useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
     if (searchQuery.length > 0) {
       navigate("/products");
     }
   }, [searchQuery]);
 
   return (
-    <nav className="flex items-center justify-between px-6 md:px-16 lg:px-24 xl:px-32 py-4 sticky top-0 z-50 transition-all border-b border-white/20 dark:border-slate-800 bg-white/70 dark:bg-black backdrop-blur-md shadow-lg dark:shadow-black/20">
-      <Link to="/" className="group">
-        <h2 className="text-2xl font-bold text-gradient dark:text-gradient-dark group-hover:scale-105 transition-transform">
+    <nav className={`flex items-center justify-between px-6 md:px-16 lg:px-24 xl:px-32 sticky top-0 z-50 transition-all duration-300 border-b ${isScrolled ? 'py-3 bg-white/80 dark:bg-neutral-900/90 backdrop-blur-xl shadow-md border-slate-200 dark:border-slate-800' : 'py-5 bg-white/40 dark:bg-black/40 backdrop-blur-md border-transparent dark:border-transparent'}`}>
+      <Link to="/">
+        <motion.h2
+          whileHover={{ scale: 1.05, rotate: -2, transition: { type: "spring", stiffness: 300 } }}
+          whileTap={{ scale: 0.95 }}
+          className="text-2xl font-bold text-gradient dark:text-gradient-dark origin-left"
+        >
           Grocery App
-        </h2>
+        </motion.h2>
       </Link>
 
       {/* Desktop Menu */}
@@ -100,15 +113,17 @@ const Navbar = () => {
             </ul>
           </div>
         ) : (
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05, transition: { type: "spring", stiffness: 400 } }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => {
               setOpen(false);
               setShowUserLogin(true);
             }}
-            className="cursor-pointer px-6 py-2 bg-gradient-to-r from-primary to-accent hover:from-accent hover:to-primary transition-all text-white rounded-full font-medium shadow-lg shadow-primary/30 hover:shadow-primary/50 active:scale-95"
+            className="cursor-pointer px-6 py-2 bg-gradient-to-r from-primary to-accent hover:from-accent hover:to-primary text-white rounded-full font-medium shadow-lg shadow-primary/30 hover:shadow-primary/50"
           >
             Log In
-          </button>
+          </motion.button>
         )}
       </div>
 
@@ -165,15 +180,17 @@ const Navbar = () => {
                 </button>
               </div>
             ) : (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05, transition: { type: "spring", stiffness: 400 } }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => {
                   setOpen(false);
                   setShowUserLogin(true);
                 }}
-                className="px-8 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-full font-medium shadow-lg hover:shadow-xl transition-all w-3/4 max-w-xs"
+                className="px-8 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-full font-medium shadow-lg hover:shadow-xl w-3/4 max-w-xs"
               >
                 Log In
-              </button>
+              </motion.button>
             )}
           </motion.div>
         )}

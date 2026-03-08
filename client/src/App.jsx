@@ -1,4 +1,5 @@
 import { Routes, Route, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 import Products from "./pages/Products";
 import SingleProduct from "./pages/SingleProduct";
 import Home from "./pages/Home";
@@ -16,37 +17,43 @@ import SellerLayout from "./pages/seller/SellerLayout";
 import AddProduct from "./pages/seller/AddProduct";
 import ProductList from "./pages/seller/ProductList";
 import Orders from "./pages/seller/Orders";
+import PageTransition from "./components/PageTransition";
+
 const App = () => {
-  const isSellerPath = useLocation().pathname.includes("seller");
+  const location = useLocation();
+  const isSellerPath = location.pathname.includes("seller");
   const { showUserLogin, isSeller } = useAppContext();
+
   return (
-    <div className="text-default min-h-screen flex flex-col">
+    <div className="text-default min-h-screen flex flex-col overflow-x-hidden">
       {isSellerPath ? null : <Navbar />}
       {showUserLogin ? <Auth /> : null}
       <Toaster />
       <div
         className={`flex-grow ${isSellerPath ? "" : "px-6 md:px-16 lg:px-24 xl:px-32"}`}
       >
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/products/:category" element={<ProductCategory />} />
-          <Route path="/product/:category/:id" element={<SingleProduct />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/add-address" element={<Address />} />
-          <Route path="/my-orders" element={<MyOrders />} />
-          <Route
-            path="/seller"
-            element={isSeller ? <SellerLayout /> : <SellerLogin />}
-          >
-            <Route index element={isSeller ? <AddProduct /> : null} />
+        <AnimatePresence mode="wait">
+          <Routes location={location} key={location.pathname}>
+            <Route path="/" element={<PageTransition><Home /></PageTransition>} />
+            <Route path="/products" element={<PageTransition><Products /></PageTransition>} />
+            <Route path="/products/:category" element={<PageTransition><ProductCategory /></PageTransition>} />
+            <Route path="/product/:category/:id" element={<PageTransition><SingleProduct /></PageTransition>} />
+            <Route path="/cart" element={<PageTransition><Cart /></PageTransition>} />
+            <Route path="/add-address" element={<PageTransition><Address /></PageTransition>} />
+            <Route path="/my-orders" element={<PageTransition><MyOrders /></PageTransition>} />
             <Route
-              path="product-list"
-              element={isSeller ? <ProductList /> : null}
-            />
-            <Route path="orders" element={isSeller ? <Orders /> : null} />
-          </Route>
-        </Routes>
+              path="/seller"
+              element={isSeller ? <PageTransition><SellerLayout /></PageTransition> : <PageTransition><SellerLogin /></PageTransition>}
+            >
+              <Route index element={isSeller ? <AddProduct /> : null} />
+              <Route
+                path="product-list"
+                element={isSeller ? <ProductList /> : null}
+              />
+              <Route path="orders" element={isSeller ? <Orders /> : null} />
+            </Route>
+          </Routes>
+        </AnimatePresence>
       </div>
       {isSellerPath ? null : <Footer />}
     </div>
