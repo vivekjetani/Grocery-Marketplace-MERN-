@@ -1,10 +1,15 @@
+import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { assets } from "../assets/assets";
+import CustomCursor from "./CustomCursor";
 
 const Banner = () => {
+  const bannerRef = useRef(null);
+
   return (
-    <div className="relative w-full rounded-2xl md:rounded-3xl overflow-hidden mt-4 md:mt-6 shadow-2xl shadow-primary/20 bg-mesh-light dark:bg-mesh-dark border border-white/20 dark:border-slate-800 transition-colors duration-500 min-h-[350px] sm:min-h-[400px] md:min-h-[500px] flex items-center py-10 md:py-0">
+    <div ref={bannerRef} className="relative w-full rounded-2xl md:rounded-3xl overflow-hidden mt-4 md:mt-6 shadow-2xl shadow-primary/20 bg-mesh-light dark:bg-mesh-dark border border-white/20 dark:border-slate-800 transition-colors duration-500 min-h-[350px] sm:min-h-[400px] md:min-h-[500px] flex items-center py-10 md:py-0">
+      <CustomCursor boundaryRef={bannerRef} />
       {/* Absolute positioning for full-width background image */}
       <motion.div
         initial={{ opacity: 0 }}

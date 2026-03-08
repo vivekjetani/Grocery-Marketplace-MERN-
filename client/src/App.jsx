@@ -18,6 +18,7 @@ import AddProduct from "./pages/seller/AddProduct";
 import ProductList from "./pages/seller/ProductList";
 import Orders from "./pages/seller/Orders";
 import PageTransition from "./components/PageTransition";
+import CustomCursor from "./components/CustomCursor";
 
 const App = () => {
   const location = useLocation();
