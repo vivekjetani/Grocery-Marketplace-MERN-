@@ -1,47 +1,159 @@
 import { useContext, useEffect, useState } from "react";
 import { AppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
+import { motion } from "framer-motion";
+import { Package, Calendar, User, MapPin, CreditCard, CheckCircle, Clock } from "lucide-react";
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const { axios } = useContext(AppContext);
+
   const fetchOrders = async () => {
     try {
       const { data } = await axios.get("/api/order/seller");
       if (data.success) setOrders(data.orders);
       else toast.error(data.message);
-    } catch (error) { toast.error(error.message); }
+    } catch (error) {
+      toast.error(error.message);
+    }
   };
-  useEffect(() => { fetchOrders(); }, []);
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
   return (
-    <div className="md:p-10 p-4 space-y-4">
-      <h2 className="text-lg font-medium text-slate-900 dark:text-white">Orders List</h2>
-      {orders.map((order, index) => (
-        <div key={index} className="flex flex-col md:grid md:grid-cols-[2fr_1fr_1fr_1fr] md:items-center gap-5 p-5 max-w-4xl rounded-md border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800">
-          <div className="flex gap-5">
-            <img className="w-12 h-12 object-cover opacity-60" src={`${import.meta.env.VITE_BACKEND_URL}/images/${order.items[0].product.image[0]}`} alt="Order item" />
-            <>
-              {order.items.map((item, index) => (
-                <div key={index} className="flex flex-col justify-center">
-                  <p className="font-medium">{item.product.name} <span className={`text-indigo-500 ${item.quantity < 2 && "hidden"}`}>x {item.quantity}</span></p>
-                </div>
-              ))}
-            </>
-          </div>
-          <div className="text-sm">
-            <p className="font-medium mb-1 text-slate-900 dark:text-white">{order.address.firstName} {order.address.lastName}</p>
-            <p className="text-slate-500 dark:text-slate-400">{order.address.street}, {order.address.city}, {order.address.state},{order.address.zipcode}, {order.address.country}</p>
-          </div>
-          <p className="font-medium text-base my-auto text-slate-700 dark:text-slate-300">₹{order.amount}</p>
-          <div className="flex flex-col text-sm text-slate-600 dark:text-slate-400">
-            <p>Method: {order.paymentType}</p>
-            <p>Date: {order.orderDate}</p>
-            <p>Payment: {order.isPaid ? "Paid" : "Pending"}</p>
-          </div>
+    <div className="md:p-10 p-4 max-w-6xl mx-auto space-y-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Orders List</h2>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Manage and track your customer orders</p>
         </div>
-      ))}
+        <div className="bg-indigo-50 dark:bg-indigo-900/20 px-4 py-2 rounded-2xl border border-indigo-100 dark:border-indigo-800/50">
+          <p className="text-indigo-600 dark:text-indigo-400 font-bold text-sm flex items-center gap-2">
+            <Package size={18} />
+            {orders.length} Total Orders
+          </p>
+        </div>
+      </div>
+
+      <div className="grid gap-6">
+        {orders.length === 0 ? (
+          <div className="bg-white dark:bg-slate-800 rounded-3xl p-12 text-center border border-slate-100 dark:border-slate-700 shadow-sm">
+            <div className="w-20 h-20 bg-slate-50 dark:bg-slate-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Package size={32} className="text-slate-400" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">No orders yet</h3>
+            <p className="text-slate-500 dark:text-slate-400">When customers buy your products, they will appear here.</p>
+          </div>
+        ) : (
+          orders.map((order, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className="group bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 overflow-hidden"
+            >
+              {/* Order Header */}
+              <div className="px-6 py-4 bg-slate-50/50 dark:bg-slate-700/30 border-b border-slate-100 dark:border-slate-700 flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                    <Package size={20} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Order ID</p>
+                    <p className="font-mono text-sm text-slate-700 dark:text-slate-300">#{order._id.slice(-8).toUpperCase()}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-6">
+                  <div className="flex flex-col items-end">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                      <Calendar size={10} /> Date
+                    </p>
+                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                      {new Date(order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <div className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-2 ${order.isPaid ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700'}`}>
+                    {order.isPaid ? <CheckCircle size={14} /> : <Clock size={14} />}
+                    {order.isPaid ? "Paid" : "Pending"}
+                  </div>
+                </div>
+              </div>
+
+              {/* Order Content */}
+              <div className="p-6 grid md:grid-cols-[1.5fr_1fr_0.8fr] gap-8">
+                {/* Items */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 mb-2">
+                    <Package size={16} />
+                    <span className="text-xs font-bold uppercase tracking-wider">Order Items</span>
+                  </div>
+                  {order.items.map((item, itemIdx) => (
+                    <div key={itemIdx} className="flex gap-4 items-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-700/20 group-hover:bg-indigo-50/30 dark:group-hover:bg-indigo-900/10 transition-colors">
+                      <img
+                        className="w-14 h-14 object-cover rounded-xl border border-slate-200 dark:border-slate-600"
+                        src={`${import.meta.env.VITE_BACKEND_URL}/images/${item.product.image[0]}`}
+                        alt={item.product.name}
+                      />
+                      <div className="flex-grow">
+                        <p className="font-bold text-slate-900 dark:text-white leading-tight">{item.product.name}</p>
+                        <p className="text-xs font-bold text-indigo-500 mt-1">Quantity: {item.quantity}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-black text-slate-900 dark:text-white">₹{item.product.offerPrice * item.quantity}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Customer & Address */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 mb-2">
+                    <User size={16} />
+                    <span className="text-xs font-bold uppercase tracking-wider">Customer Details</span>
+                  </div>
+                  <div className="p-4 rounded-2xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800/50 h-full">
+                    <p className="font-bold text-slate-900 dark:text-white mb-2">{order.address.firstName} {order.address.lastName}</p>
+                    <div className="flex gap-2 items-start mt-3">
+                      <MapPin size={16} className="text-indigo-500 shrink-0 mt-0.5" />
+                      <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                        {order.address.street},<br />
+                        {order.address.city}, {order.address.state},<br />
+                        {order.address.zipcode}, {order.address.country}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Summary */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 mb-2">
+                    <CreditCard size={16} />
+                    <span className="text-xs font-bold uppercase tracking-wider">Payment Summary</span>
+                  </div>
+                  <div className="p-5 rounded-2xl bg-indigo-600 dark:bg-indigo-500 text-white shadow-lg shadow-indigo-200 dark:shadow-none h-full flex flex-col justify-between">
+                    <div>
+                      <p className="text-indigo-100/80 text-xs font-bold uppercase tracking-widest mb-1">Total Amount</p>
+                      <p className="text-3xl font-black">₹{order.amount}</p>
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-indigo-400/30">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-widest opacity-80">Method:</span>
+                        <span className="font-black text-sm">{order.paymentType}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))
+        )}
+      </div>
     </div>
   );
 };
+
 export default Orders;
+

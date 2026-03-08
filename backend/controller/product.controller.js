@@ -1,4 +1,5 @@
 import Product from "../models/product.model.js";
+import Order from "../models/order.model.js";
 
 // add product :/api/product/add
 export const addProduct = async (req, res) => {
@@ -77,6 +78,75 @@ export const changeStock = async (req, res) => {
     res
       .status(200)
       .json({ success: true, product, message: "Stock updated successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// get best sellers
+export const getBestSellers = async (req, res) => {
+  try {
+    // Global best sellers based on orderCount and averageRating
+    const products = await Product.find({ inStock: true })
+      .sort({ orderCount: -1, averageRating: -1, numReviews: -1 })
+      .limit(10);
+    res.status(200).json({ success: true, products });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// get recommended products
+export const getRecommendedProducts = async (req, res) => {
+  try {
+    const { category, excludeId } = req.query;
+    const userId = req.query.userId; // Optional userId for personalization
+
+    let query = { inStock: true };
+    if (excludeId) {
+      query._id = { $ne: excludeId };
+    }
+
+    let recommendedProducts = [];
+
+    // If userId is provided, try to find products based on user's past orders
+    if (userId) {
+      const userOrders = await Order.find({ userId }).limit(10);
+      if (userOrders.length > 0) {
+        const purchasedCategories = [...new Set(userOrders.flatMap(order =>
+          order.items.map(item => item.product.category) // This assumes product is populated or we have category in items
+        ))].filter(Boolean);
+
+        // If we don't have categories in orders directly, we might need a different approach or assume they want products from same categories
+        // Let's assume we want to suggest products from categories the user has bought before
+        if (purchasedCategories.length > 0) {
+          recommendedProducts = await Product.find({
+            ...query,
+            category: { $in: purchasedCategories }
+          }).sort({ averageRating: -1 }).limit(10);
+        }
+      }
+    }
+
+    // Fallback to category-based or global high-rated
+    if (recommendedProducts.length < 5) {
+      const extraQuery = { ...query };
+      if (category) extraQuery.category = category;
+
+      const extraProducts = await Product.find(extraQuery)
+        .sort({ averageRating: -1, orderCount: -1 })
+        .limit(10 - recommendedProducts.length);
+
+      // Avoid duplicates
+      const prodIds = new Set(recommendedProducts.map(p => p._id.toString()));
+      extraProducts.forEach(p => {
+        if (!prodIds.has(p._id.toString())) {
+          recommendedProducts.push(p);
+        }
+      });
+    }
+
+    res.status(200).json({ success: true, products: recommendedProducts.slice(0, 10) });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }

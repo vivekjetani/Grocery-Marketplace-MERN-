@@ -4,12 +4,16 @@ import { Link, useParams } from "react-router-dom";
 import { assets } from "../assets/assets";
 import ProductCard from "../components/ProductCard";
 import { motion, AnimatePresence } from "framer-motion";
+import ReviewForm from "../components/ReviewForm";
+import axios from "axios";
 
 const SingleProduct = () => {
   const { products, navigate, addToCart } = useAppContext();
   const { id } = useParams();
   const [thumbnail, setThumbnail] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
 
   const product = products.find((product) => product._id === id);
 
@@ -25,7 +29,22 @@ const SingleProduct = () => {
 
   useEffect(() => {
     setThumbnail(product?.image[0] ? product.image[0] : null);
+    if (product) fetchReviews();
   }, [product]);
+
+  const fetchReviews = async () => {
+    setLoadingReviews(true);
+    try {
+      const { data } = await axios.get(`/api/review/list?productId=${id}`);
+      if (data.success) {
+        setReviews(data.reviews);
+      }
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
 
   if (!product) return null;
 
@@ -134,7 +153,10 @@ const SingleProduct = () => {
                   </svg>
                 ))}
               </div>
-              <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">4.0 <span className="text-slate-400 font-normal">(42 reviews)</span></span>
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">
+                {product.averageRating?.toFixed(1) || "0.0"}{" "}
+                <span className="text-slate-400 font-normal">({product.numReviews || 0} reviews)</span>
+              </span>
             </div>
 
             <div className="flex items-end gap-4 mb-8 border-b border-slate-200 dark:border-slate-800 pb-8">
@@ -186,6 +208,37 @@ const SingleProduct = () => {
             </div>
           </motion.div>
         </div>
+      </div>
+
+      <div className="mt-24 grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-8">Customer Reviews</h2>
+          <div className="space-y-6">
+            {loadingReviews ? (
+              <p className="text-slate-500">Loading reviews...</p>
+            ) : reviews.length > 0 ? (
+              reviews.map((review) => (
+                <div key={review._id} className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h4 className="font-bold text-slate-900 dark:text-white">{review.userName}</h4>
+                      <div className="flex text-amber-400 mt-1">
+                        {Array(5).fill("").map((_, i) => (
+                          <span key={i} className={i < review.rating ? "text-amber-400" : "text-slate-300"}>★</span>
+                        ))}
+                      </div>
+                    </div>
+                    <span className="text-xs text-slate-400">{new Date(review.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-400">{review.comment}</p>
+                </div>
+              ))
+            ) : (
+              <p className="text-slate-500">No reviews yet. Be the first to review!</p>
+            )}
+          </div>
+        </div>
+        <ReviewForm productId={id} onReviewAdded={fetchReviews} />
       </div>
 
       {/* Related Products */}

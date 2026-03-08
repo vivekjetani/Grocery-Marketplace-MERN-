@@ -27,6 +27,12 @@ export const placeOrderCOD = async (req, res) => {
       paymentType: "COD",
       isPaid: false,
     });
+
+    // Increment orderCount for each product
+    for (const item of items) {
+      await Product.findByIdAndUpdate(item.product, { $inc: { orderCount: 1 } });
+    }
+
     res
       .status(201)
       .json({ message: "Order placed successfully", success: true });

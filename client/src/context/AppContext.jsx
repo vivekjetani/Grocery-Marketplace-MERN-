@@ -188,6 +188,7 @@ export const AppContextProvider = ({ children }) => {
     setCartItems,
     isDarkMode,
     setIsDarkMode,
+    backendUrl: import.meta.env.VITE_BACKEND_URL,
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

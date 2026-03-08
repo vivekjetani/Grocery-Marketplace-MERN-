@@ -1,8 +1,25 @@
+import { useEffect, useState } from "react";
 import ProductCard from "./ProductCard";
 import { useAppContext } from "../context/AppContext";
+import axios from "axios";
 
 const BestSeller = () => {
-  const { products } = useAppContext();
+  const { backendUrl } = useAppContext();
+  const [bestSellers, setBestSellers] = useState([]);
+
+  useEffect(() => {
+    const fetchBestSellers = async () => {
+      try {
+        const { data } = await axios.get("/api/product/best-sellers");
+        if (data.success) {
+          setBestSellers(data.products);
+        }
+      } catch (error) {
+        console.error("Error fetching best sellers:", error);
+      }
+    };
+    fetchBestSellers();
+  }, []);
 
   return (
     <div className="mt-20">
@@ -16,12 +33,9 @@ const BestSeller = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 items-center justify-center">
-        {products
-          .filter((product) => product.inStock)
-          .slice(0, 5)
-          .map((product, index) => (
-            <ProductCard key={product._id} product={product} />
-          ))}
+        {bestSellers.map((product) => (
+          <ProductCard key={product._id} product={product} />
+        ))}
       </div>
     </div>
   );
