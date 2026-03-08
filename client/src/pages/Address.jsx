@@ -44,39 +44,39 @@ const Address = () => {
           <form onSubmit={submitHanlder} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">First Name</label>
-              <input type="text" name="firstName" value={address.firstName} onChange={handleChange} className={inputClass} placeholder="John" required />
+              <input type="text" name="firstName" value={address.firstName} onChange={handleChange} className={inputClass} placeholder="Vivek" required />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Last Name</label>
-              <input type="text" name="lastName" value={address.lastName} onChange={handleChange} className={inputClass} placeholder="Doe" required />
+              <input type="text" name="lastName" value={address.lastName} onChange={handleChange} className={inputClass} placeholder="Jetani" required />
             </div>
             <div className="col-span-1 md:col-span-2 flex flex-col gap-1.5">
               <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Email</label>
-              <input type="email" name="email" value={address.email} onChange={handleChange} className={inputClass} placeholder="you@example.com" required />
+              <input type="email" name="email" value={address.email} onChange={handleChange} className={inputClass} placeholder="Email" required />
             </div>
             <div className="col-span-1 md:col-span-2 flex flex-col gap-1.5">
               <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Street</label>
-              <input type="text" name="street" value={address.street} onChange={handleChange} className={inputClass} placeholder="123 Main St" required />
+              <input type="text" name="street" value={address.street} onChange={handleChange} className={inputClass} placeholder="Street" required />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">City</label>
-              <input type="text" name="city" value={address.city} onChange={handleChange} className={inputClass} placeholder="New York" required />
+              <input type="text" name="city" value={address.city} onChange={handleChange} className={inputClass} placeholder="City" required />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">State</label>
-              <input type="text" name="state" value={address.state} onChange={handleChange} className={inputClass} placeholder="NY" required />
+              <input type="text" name="state" value={address.state} onChange={handleChange} className={inputClass} placeholder="State" required />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Zip Code</label>
-              <input type="number" name="zipCode" value={address.zipCode} onChange={handleChange} className={inputClass} placeholder="10001" required />
+              <input type="number" name="zipCode" value={address.zipCode} onChange={handleChange} className={inputClass} placeholder="Zip Code" required />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Country</label>
-              <input type="text" name="country" value={address.country} onChange={handleChange} className={inputClass} placeholder="USA" required />
+              <input type="text" name="country" value={address.country} onChange={handleChange} className={inputClass} placeholder="India" required />
             </div>
             <div className="col-span-1 md:col-span-2 flex flex-col gap-1.5">
               <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Phone</label>
-              <input type="number" name="phone" value={address.phone} onChange={handleChange} className={inputClass} placeholder="+1 234 567 890" required />
+              <input type="tel" name="phone" value={address.phone} onChange={handleChange} className={inputClass} placeholder="+91 98765 43210" required />
             </div>
             <div className="col-span-1 md:col-span-2 mt-2">
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className="w-full bg-gradient-to-r from-primary to-secondary text-white font-bold py-4 rounded-2xl shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all">

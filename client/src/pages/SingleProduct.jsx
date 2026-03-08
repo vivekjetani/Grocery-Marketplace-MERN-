@@ -138,11 +138,11 @@ const SingleProduct = () => {
             </div>
 
             <div className="flex items-end gap-4 mb-8 border-b border-slate-200 dark:border-slate-800 pb-8">
-              <p className="text-4xl font-black text-slate-900 dark:text-white">${product.offerPrice}</p>
+              <p className="text-4xl font-black text-slate-900 dark:text-white">₹{product.offerPrice}</p>
               {product.price > product.offerPrice && (
                 <div className="flex flex-col pb-1">
-                  <p className="text-lg text-slate-400 font-medium line-through">${product.price}</p>
-                  <p className="text-xs font-bold text-green-500">Save ${(product.price - product.offerPrice).toFixed(2)}!</p>
+                  <p className="text-lg text-slate-400 font-medium line-through">₹{product.price}</p>
+                  <p className="text-xs font-bold text-green-500">Save ₹{(product.price - product.offerPrice).toFixed(2)}!</p>
                 </div>
               )}
             </div>

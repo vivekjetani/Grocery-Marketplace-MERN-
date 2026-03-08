@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { AppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Plus } from "lucide-react";
+import { MapPin, Plus, Trash2 } from "lucide-react";
 
 const ProfileAddresses = () => {
     const [addresses, setAddresses] = useState([]);
@@ -18,6 +18,20 @@ const ProfileAddresses = () => {
             }
         } catch (error) {
             toast.error(error?.response?.data?.message || "Failed to fetch addresses");
+        }
+    };
+
+    const deleteAddress = async (id) => {
+        try {
+            const { data } = await axios.delete(`/api/address/delete/${id}`);
+            if (data.success) {
+                toast.success(data.message);
+                fetchAddresses();
+            } else {
+                toast.error(data.message);
+            }
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Failed to delete address");
         }
     };
 
@@ -77,10 +91,18 @@ const ProfileAddresses = () => {
                             >
                                 {/* Default Badge if index 0 currently */}
                                 {index === 0 && (
-                                    <span className="absolute top-4 right-4 bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full border border-primary/20">
+                                    <span className="absolute top-4 left-4 md:left-auto md:right-4 bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full border border-primary/20">
                                         Default
                                     </span>
                                 )}
+
+                                <button
+                                    onClick={() => deleteAddress(addr._id)}
+                                    className="absolute top-4 right-4 md:top-auto md:bottom-4 md:right-4 w-8 h-8 bg-slate-50 dark:bg-slate-700/50 hover:bg-red-50 dark:hover:bg-red-500/10 text-slate-400 hover:text-red-500 rounded-full flex items-center justify-center transition-colors border border-slate-100 dark:border-slate-700 opacity-0 group-hover:opacity-100 focus:opacity-100 z-10"
+                                    title="Delete Address"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
 
                                 <h3 className="font-extrabold text-lg text-slate-900 dark:text-white mb-1 flex items-center gap-2">
                                     {addr.firstName} {addr.lastName}

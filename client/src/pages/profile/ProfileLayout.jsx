@@ -1,9 +1,27 @@
 import { Outlet, NavLink, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { User, Package, MapPin } from "lucide-react";
+import { User, Package, MapPin, LogOut } from "lucide-react";
+import { useAppContext } from "../../context/AppContext";
+import toast from "react-hot-toast";
 
 const ProfileLayout = () => {
     const location = useLocation();
+    const { axios, setUser, navigate } = useAppContext();
+
+    const logout = async () => {
+        try {
+            const { data } = await axios.get("/api/user/logout");
+            if (data.success) {
+                setUser(null);
+                navigate("/");
+                toast.success(data.message);
+            } else {
+                toast.error(data.message);
+            }
+        } catch (error) {
+            toast.error(error.message);
+        }
+    };
 
     const navItems = [
         { name: "Profile Info", path: "/profile/info", icon: User },
@@ -30,8 +48,8 @@ const ProfileLayout = () => {
                                         className={({ isActive: isLinkActive }) => {
                                             const active = isLinkActive || (item.path === '/profile/info' && location.pathname === '/profile');
                                             return `flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all relative overflow-hidden group w-full md:w-auto ${active
-                                                    ? "text-primary bg-primary/10 dark:bg-primary/20"
-                                                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white"
+                                                ? "text-primary bg-primary/10 dark:bg-primary/20"
+                                                : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white"
                                                 }`
                                         }}
                                     >
@@ -48,6 +66,14 @@ const ProfileLayout = () => {
                                     </NavLink>
                                 );
                             })}
+
+                            <button
+                                onClick={logout}
+                                className="flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 w-full md:w-auto mt-2 md:mt-4"
+                            >
+                                <LogOut size={20} />
+                                <span>Logout</span>
+                            </button>
                         </div>
                     </div>
                 </div>

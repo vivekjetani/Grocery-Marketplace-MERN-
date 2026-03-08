@@ -2,17 +2,36 @@ import { useContext, useEffect, useState } from "react";
 import { AppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
-import { Package, ArrowLeft } from "lucide-react";
+import { Package, ArrowLeft, RefreshCw } from "lucide-react";
 
 const ProfileOrders = () => {
   const [myOrders, setMyOrders] = useState([]);
-  const { axios, user, navigate } = useContext(AppContext);
+  const { axios, user, navigate, cartItems, setCartItems } = useContext(AppContext);
   const fetchOrders = async () => {
     try {
       const { data } = await axios.get("/api/order/user");
       if (data.success) setMyOrders(data.orders);
       else toast.error(data.message);
     } catch (error) { toast.error(error.message); }
+  };
+
+  const handleReorder = (orderItems) => {
+    try {
+      let newCart = structuredClone(cartItems || {});
+      orderItems.forEach(item => {
+        const productId = item.product._id;
+        if (newCart[productId]) {
+          newCart[productId] += item.quantity;
+        } else {
+          newCart[productId] = item.quantity;
+        }
+      });
+      setCartItems(newCart);
+      toast.success("Items added to cart! 🎉");
+      navigate("/cart");
+    } catch (error) {
+      toast.error("Failed to reorder items");
+    }
   };
 
   useEffect(() => { if (user) fetchOrders(); }, [user]);
@@ -50,8 +69,17 @@ const ProfileOrders = () => {
                   <span className="text-xs font-mono text-slate-700 dark:text-slate-300 truncate max-w-[150px]">{order._id}</span>
                 </div>
                 <div className="flex items-center gap-4 text-xs font-bold">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleReorder(order.items)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full hover:bg-primary hover:text-white transition-all duration-300"
+                  >
+                    <RefreshCw size={14} />
+                    <span>Reorder</span>
+                  </motion.button>
                   <span className="bg-primary/10 text-primary px-3 py-1 rounded-full">{order.paymentType}</span>
-                  <span className="text-slate-900 dark:text-white text-base">${order.amount}</span>
+                  <span className="text-slate-900 dark:text-white text-base">₹{order.amount}</span>
                 </div>
               </div>
               {order.items.map((item, itemIndex) => (
@@ -69,7 +97,7 @@ const ProfileOrders = () => {
                     <div className="flex items-center gap-1"><span className="text-slate-500 dark:text-slate-400 font-medium">Qty:</span><span className="font-bold text-slate-900 dark:text-white">{item.quantity || "1"}</span></div>
                     <span className={`text-xs font-bold px-3 py-1 rounded-full ${order.status === "Delivered" ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" : order.status === "Cancelled" ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400" : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"}`}>{order.status}</span>
                     <span className="text-slate-500 dark:text-slate-400 text-xs font-medium">{new Date(order.createdAt).toLocaleDateString()}</span>
-                    <span className="font-black text-slate-900 dark:text-white text-base">${(item.product.offerPrice * item.quantity).toFixed(2)}</span>
+                    <span className="font-black text-slate-900 dark:text-white text-base">₹{(item.product.offerPrice * item.quantity).toFixed(2)}</span>
                   </div>
                 </div>
               ))}

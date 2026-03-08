@@ -51,9 +51,9 @@ const ProductCard = ({ product }) => {
 
           <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100 dark:border-slate-700">
             <div className="flex flex-col">
-              <span className="text-xl font-bold text-slate-900 dark:text-white">${product.offerPrice.toFixed(2)}</span>
+              <span className="text-xl font-bold text-slate-900 dark:text-white">₹{product.offerPrice.toFixed(2)}</span>
               {product.price > product.offerPrice && (
-                <span className="text-xs font-medium text-slate-400 line-through">${product.price.toFixed(2)}</span>
+                <span className="text-xs font-medium text-slate-400 line-through">₹{product.price.toFixed(2)}</span>
               )}
             </div>
 

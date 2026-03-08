@@ -33,6 +33,20 @@
     scroll-behavior: smooth;
   }
 
+  @layer base {
+
+    /* Hide arrows from number inputs */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+  }
+
   body {
     @apply bg-white text-slate-900 transition-colors duration-300;
   }

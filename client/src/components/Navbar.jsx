@@ -102,7 +102,9 @@ const Navbar = () => {
 
         {user ? (
           <div className="relative group">
-            <img src={assets.profile_icon} alt="Profile" className="w-10 h-10 rounded-full border-2 border-primary/20 cursor-pointer object-cover" />
+            <Link to="/profile">
+              <img src={assets.profile_icon} alt="Profile" className="w-10 h-10 rounded-full border-2 border-primary/20 cursor-pointer object-cover" />
+            </Link>
             <ul className="hidden group-hover:block absolute top-[110%] right-0 bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 py-2 w-32 rounded-xl z-40 text-sm overflow-hidden backdrop-blur-xl">
               <li onClick={() => navigate("/profile")} className="px-4 py-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                 Profile

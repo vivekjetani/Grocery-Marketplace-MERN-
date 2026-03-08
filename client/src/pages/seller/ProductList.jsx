@@ -35,7 +35,7 @@ const ProductList = () => {
                     <span className="truncate max-sm:hidden w-full text-slate-900 dark:text-slate-200">{product.name}</span>
                   </td>
                   <td className="px-4 py-3">{product.category}</td>
-                  <td className="px-4 py-3 max-sm:hidden">${product.offerPrice}</td>
+                  <td className="px-4 py-3 max-sm:hidden">₹{product.offerPrice}</td>
                   <td className="px-4 py-3">
                     <label className="relative inline-flex items-center cursor-pointer text-slate-900 dark:text-slate-200 gap-3">
                       <input onChange={() => toggleStock(product._id, !product.inStock)} checked={product.inStock} type="checkbox" className="sr-only peer" readOnly />

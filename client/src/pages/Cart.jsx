@@ -199,19 +199,19 @@ const Cart = () => {
                           +
                         </button>
                       </div>
-                      <span className="md:hidden font-bold text-slate-900 dark:text-white">${product.offerPrice}</span>
+                      <span className="md:hidden font-bold text-slate-900 dark:text-white">₹{product.offerPrice}</span>
                     </div>
 
                     <div className="hidden md:flex flex-col items-end w-full pr-4">
                       <p className="font-black text-xl text-slate-900 dark:text-white">
-                        ${(product.offerPrice * product.quantity).toFixed(2)}
+                        ₹{(product.offerPrice * product.quantity).toFixed(2)}
                       </p>
-                      <p className="text-xs text-slate-400 font-medium">${product.offerPrice} each</p>
+                      <p className="text-xs text-slate-400 font-medium">₹{product.offerPrice} each</p>
                     </div>
 
                     <div className="md:hidden w-full flex justify-between items-center px-2 pt-2 border-t border-slate-100 dark:border-slate-700/50">
                       <span className="font-medium text-slate-500 dark:text-slate-400 text-sm">Total</span>
-                      <span className="font-black text-lg text-slate-900 dark:text-white">${(product.offerPrice * product.quantity).toFixed(2)}</span>
+                      <span className="font-black text-lg text-slate-900 dark:text-white">₹{(product.offerPrice * product.quantity).toFixed(2)}</span>
                     </div>
                   </motion.div>
                 ))}
@@ -321,11 +321,11 @@ const Cart = () => {
               <div className="space-y-4 border-t border-slate-100 dark:border-slate-700 pt-6">
                 <div className="flex justify-between items-center text-slate-600 dark:text-slate-400 font-medium">
                   <span>Subtotal</span>
-                  <span className="text-slate-900 dark:text-white font-bold">${totalCartAmount().toFixed(2)}</span>
+                  <span className="text-slate-900 dark:text-white font-bold">₹{totalCartAmount().toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center text-slate-600 dark:text-slate-400 font-medium">
                   <span>Estimated Tax (2%)</span>
-                  <span className="text-slate-900 dark:text-white font-bold">${((totalCartAmount() * 2) / 100).toFixed(2)}</span>
+                  <span className="text-slate-900 dark:text-white font-bold">₹{((totalCartAmount() * 2) / 100).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center text-slate-600 dark:text-slate-400 font-medium">
                   <span>Shipping</span>
@@ -334,7 +334,7 @@ const Cart = () => {
 
                 <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-end">
                   <span className="text-lg font-bold text-slate-900 dark:text-white">Total</span>
-                  <span className="text-3xl font-black text-primary">${(totalCartAmount() + (totalCartAmount() * 2) / 100).toFixed(2)}</span>
+                  <span className="text-3xl font-black text-primary">₹{(totalCartAmount() + (totalCartAmount() * 2) / 100).toFixed(2)}</span>
                 </div>
               </div>
 
