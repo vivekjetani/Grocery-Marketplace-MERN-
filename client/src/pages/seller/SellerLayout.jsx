@@ -13,6 +13,7 @@ const SellerLayout = () => {
     { name: "Product List", path: "/seller/product-list", icon: assets.product_list_icon },
     { name: "Orders", path: "/seller/orders", icon: assets.order_icon },
     { name: "Categories", path: "/seller/category-manager", icon: assets.add_icon }, // Using add_icon for now
+    { name: "Users", path: "/seller/users", icon: assets.profile_icon },
   ];
 
   const logout = async () => {

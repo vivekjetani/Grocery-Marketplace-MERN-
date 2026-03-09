@@ -1,11 +1,13 @@
 import { useContext, useEffect, useState } from "react";
 import { AppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
-import { motion } from "framer-motion";
-import { Package, ArrowLeft, RefreshCw } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Package, ArrowLeft, RefreshCw, Star, X } from "lucide-react";
+import ReviewForm from "../../components/ReviewForm";
 
 const ProfileOrders = () => {
   const [myOrders, setMyOrders] = useState([]);
+  const [reviewProductId, setReviewProductId] = useState(null);
   const { axios, user, navigate, cartItems, setCartItems } = useContext(AppContext);
   const fetchOrders = async () => {
     try {
@@ -98,6 +100,13 @@ const ProfileOrders = () => {
                     <span className={`text-xs font-bold px-3 py-1 rounded-full ${order.status === "Delivered" ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" : order.status === "Cancelled" ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400" : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"}`}>{order.status}</span>
                     <span className="text-slate-500 dark:text-slate-400 text-xs font-medium">{new Date(order.createdAt).toLocaleDateString()}</span>
                     <span className="font-black text-slate-900 dark:text-white text-base">₹{(item.product.offerPrice * item.quantity).toFixed(2)}</span>
+                    <button
+                      onClick={() => setReviewProductId(item.product._id)}
+                      className="flex items-center gap-1 text-xs font-bold px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 rounded-full hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                    >
+                      <Star size={14} />
+                      Give Review
+                    </button>
                   </div>
                 </div>
               ))}
@@ -105,6 +114,36 @@ const ProfileOrders = () => {
           ))}
         </div>
       )}
+
+      {/* Review Modal */}
+      <AnimatePresence>
+        {reviewProductId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md"
+            >
+              <button
+                onClick={() => setReviewProductId(null)}
+                className="absolute top-14 right-4 z-10 w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500 dark:text-slate-400 rounded-full transition-colors"
+              >
+                <X size={16} />
+              </button>
+              <ReviewForm
+                productId={reviewProductId}
+                onReviewAdded={() => setReviewProductId(null)}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
