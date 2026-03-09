@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAppContext } from "../context/AppContext";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 
 const ReviewForm = ({ productId, onReviewAdded }) => {
-    const { user, axios } = useAppContext();
+    const { user } = useAppContext();
     const [rating, setRating] = useState(5);
     const [comment, setComment] = useState("");
     const [loading, setLoading] = useState(false);
