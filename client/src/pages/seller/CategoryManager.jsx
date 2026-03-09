@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
-import { Plus, Trash2, FolderPlus, Edit2, ChevronDown, ChevronUp, PackageOpen, CheckSquare, Square, CornerUpRight } from "lucide-react";
+import { Plus, Trash2, FolderPlus, Edit2, ChevronDown, ChevronUp, PackageOpen, CheckSquare, Square, CornerUpRight, GripVertical } from "lucide-react";
 
 const CategoryManager = () => {
     const { axios, categories, fetchCategories, products, fetchProducts } = useAppContext();
@@ -25,6 +25,10 @@ const CategoryManager = () => {
 
     // Advanced Delete state (Transfer vs Delete All)
     const [categoryToDelete, setCategoryToDelete] = useState(null);
+
+    // Drag and Drop states
+    const [draggedCategoryIdx, setDraggedCategoryIdx] = useState(null);
+    const [dragOverCategoryIdx, setDragOverCategoryIdx] = useState(null);
 
     useEffect(() => {
         if (fetchProducts && products.length === 0) {
@@ -144,6 +148,81 @@ const CategoryManager = () => {
         } finally {
             setRenameCategoryObj(null);
         }
+    };
+
+    // --- REORDERING ---
+    const moveCategory = async (e, index, direction) => {
+        e.stopPropagation(); // Prevent accordion from toggling
+
+        let newIndex = index;
+        if (direction === 'up' && index > 0) newIndex = index - 1;
+        if (direction === 'down' && index < categories.length - 1) newIndex = index + 1;
+
+        if (newIndex === index) return; // No movement possible
+
+        // Optimistically swap locally to avoid UI lag (we don't have a direct setter, but we can call API and fetch immediately)
+        const newOrder = [...categories];
+        const temp = newOrder[index];
+        newOrder[index] = newOrder[newIndex];
+        newOrder[newIndex] = temp;
+
+        const orderedIds = newOrder.map(c => c._id);
+
+        try {
+            const { data } = await axios.put('/api/category/reorder', { orderedIds });
+            if (data.success) {
+                await fetchCategories(); // Refresh from DB to ensure sync
+            }
+        } catch (error) {
+            toast.error("Failed to reorder categories");
+            await fetchCategories(); // Revert on failure
+        }
+    };
+
+    const handleDragStart = (e, index) => {
+        setDraggedCategoryIdx(index);
+        e.dataTransfer.effectAllowed = 'move';
+        setTimeout(() => {
+            e.target.classList.add('opacity-50');
+        }, 0);
+    };
+
+    const handleDragEnter = (e, index) => {
+        e.preventDefault();
+        setDragOverCategoryIdx(index);
+    };
+
+    const handleDragEnd = async (e) => {
+        e.target.classList.remove('opacity-50');
+
+        if (draggedCategoryIdx === null || dragOverCategoryIdx === null || draggedCategoryIdx === dragOverCategoryIdx) {
+            setDraggedCategoryIdx(null);
+            setDragOverCategoryIdx(null);
+            return;
+        }
+
+        const newOrder = [...categories];
+        const draggedItem = newOrder.splice(draggedCategoryIdx, 1)[0];
+        newOrder.splice(dragOverCategoryIdx, 0, draggedItem);
+
+        setDraggedCategoryIdx(null);
+        setDragOverCategoryIdx(null);
+
+        const orderedIds = newOrder.map(c => c._id);
+
+        try {
+            const { data } = await axios.put('/api/category/reorder', { orderedIds });
+            if (data.success) {
+                await fetchCategories();
+            }
+        } catch (error) {
+            toast.error("Failed to reorder categories");
+            await fetchCategories();
+        }
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
     };
 
     // --- ACCORDION & PRODUCT SELECTION ---
@@ -289,13 +368,24 @@ const CategoryManager = () => {
                                 const isExpanded = expandedCategory === category.text;
 
                                 return (
-                                    <div key={category._id || idx} className="flex flex-col border-b border-slate-100 dark:border-slate-800 last:border-0">
+                                    <div
+                                        key={category._id || idx}
+                                        className={`flex flex-col border-b border-slate-100 dark:border-slate-800 last:border-0 transition-all ${dragOverCategoryIdx === idx ? (dragOverCategoryIdx > draggedCategoryIdx ? 'border-b-2 border-b-indigo-500' : 'border-t-2 border-t-indigo-500') : ''} ${draggedCategoryIdx === idx ? 'bg-slate-50 dark:bg-slate-800/50' : ''}`}
+                                        draggable
+                                        onDragStart={(e) => handleDragStart(e, idx)}
+                                        onDragEnter={(e) => handleDragEnter(e, idx)}
+                                        onDragEnd={handleDragEnd}
+                                        onDragOver={handleDragOver}
+                                    >
                                         {/* Category Header */}
                                         <div
                                             className={`px-6 py-4 flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors cursor-pointer ${isExpanded ? 'bg-slate-50 dark:bg-slate-800/30' : ''}`}
                                             onClick={() => toggleCategory(category.text)}
                                         >
                                             <div className="flex items-center gap-4">
+                                                <div className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-indigo-500 p-1 -ml-2" title="Drag to reorder" onClick={e => e.stopPropagation()}>
+                                                    <GripVertical size={20} />
+                                                </div>
                                                 {category.image && (
                                                     <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-lg p-1 border border-slate-200 dark:border-slate-700 flex-shrink-0">
                                                         <img
@@ -318,7 +408,24 @@ const CategoryManager = () => {
                                                 {/* Actions only appear on hover, click to stop propagation */}
                                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity mr-2" onClick={(e) => e.stopPropagation()}>
                                                     <button
-                                                        onClick={() => handleOpenRename(category)}
+                                                        onClick={(e) => moveCategory(e, idx, 'up')}
+                                                        disabled={idx === 0}
+                                                        className="p-1.5 text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent"
+                                                        title="Move Up"
+                                                    >
+                                                        <ChevronUp size={18} />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => moveCategory(e, idx, 'down')}
+                                                        disabled={idx === categories.length - 1}
+                                                        className="p-1.5 text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent"
+                                                        title="Move Down"
+                                                    >
+                                                        <ChevronDown size={18} />
+                                                    </button>
+                                                    <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1"></div>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleOpenRename(category); }}
                                                         className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 rounded-lg transition-all"
                                                         title="Rename Category"
                                                     >
@@ -409,200 +516,208 @@ const CategoryManager = () => {
                         )}
                     </div>
                 </div>
-            </div>
+            </div >
 
             {/* Custom Delete Confirmation Modal */}
-            {deleteCategoryId && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in fade-in zoom-in duration-200">
-                        <div className="flex items-center gap-3 text-red-600 mb-4">
-                            <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full">
-                                <Trash2 size={24} />
+            {
+                deleteCategoryId && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in fade-in zoom-in duration-200">
+                            <div className="flex items-center gap-3 text-red-600 mb-4">
+                                <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full">
+                                    <Trash2 size={24} />
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Delete Category</h3>
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Delete Category</h3>
-                        </div>
-                        <p className="text-slate-600 dark:text-slate-400 mb-6 font-medium">
-                            Are you sure you want to delete this category? This action cannot be undone.
-                        </p>
-                        <div className="flex justify-end gap-3 font-medium">
-                            <button
-                                onClick={() => setDeleteCategoryId(null)}
-                                className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={confirmDelete}
-                                className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white shadow-sm hover:shadow-red-500/20 transition-all font-medium"
-                            >
-                                Delete
-                            </button>
+                            <p className="text-slate-600 dark:text-slate-400 mb-6 font-medium">
+                                Are you sure you want to delete this category? This action cannot be undone.
+                            </p>
+                            <div className="flex justify-end gap-3 font-medium">
+                                <button
+                                    onClick={() => setDeleteCategoryId(null)}
+                                    className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDelete}
+                                    className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white shadow-sm hover:shadow-red-500/20 transition-all font-medium"
+                                >
+                                    Delete
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Rename Category Modal */}
-            {renameCategoryObj && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in fade-in zoom-in duration-200">
-                        <div className="flex items-center gap-3 text-indigo-600 dark:text-indigo-400 mb-4">
-                            <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-full">
-                                <Edit2 size={24} />
+            {
+                renameCategoryObj && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in fade-in zoom-in duration-200">
+                            <div className="flex items-center gap-3 text-indigo-600 dark:text-indigo-400 mb-4">
+                                <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-full">
+                                    <Edit2 size={24} />
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Rename Category</h3>
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Rename Category</h3>
-                        </div>
-                        <div className="mb-6">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">New Category Name</label>
-                            <input
-                                type="text"
-                                value={newRenameValue}
-                                onChange={(e) => setNewRenameValue(e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none px-4 py-2.5 text-slate-900 dark:text-white focus:border-indigo-500"
-                                autoFocus
-                            />
-                        </div>
-                        <div className="flex justify-end gap-3 font-medium">
-                            <button
-                                onClick={() => setRenameCategoryObj(null)}
-                                className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={confirmRename}
-                                disabled={!newRenameValue.trim() || newRenameValue.trim() === renameCategoryObj.text}
-                                className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white shadow-sm hover:shadow-indigo-500/20 transition-all font-medium flex items-center gap-2"
-                            >
-                                Save Changes
-                            </button>
+                            <div className="mb-6">
+                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">New Category Name</label>
+                                <input
+                                    type="text"
+                                    value={newRenameValue}
+                                    onChange={(e) => setNewRenameValue(e.target.value)}
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none px-4 py-2.5 text-slate-900 dark:text-white focus:border-indigo-500"
+                                    autoFocus
+                                />
+                            </div>
+                            <div className="flex justify-end gap-3 font-medium">
+                                <button
+                                    onClick={() => setRenameCategoryObj(null)}
+                                    className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmRename}
+                                    disabled={!newRenameValue.trim() || newRenameValue.trim() === renameCategoryObj.text}
+                                    className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white shadow-sm hover:shadow-indigo-500/20 transition-all font-medium flex items-center gap-2"
+                                >
+                                    Save Changes
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Transfer Products Modal */}
-            {showTransferModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-                        <div className="flex items-center gap-3 text-indigo-600 dark:text-indigo-400 mb-4">
-                            <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-full">
-                                <CornerUpRight size={24} />
+            {
+                showTransferModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+                            <div className="flex items-center gap-3 text-indigo-600 dark:text-indigo-400 mb-4">
+                                <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-full">
+                                    <CornerUpRight size={24} />
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Transfer Products</h3>
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Transfer Products</h3>
-                        </div>
 
-                        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 mb-6 border border-slate-200 dark:border-slate-700">
-                            <p className="text-sm text-slate-600 dark:text-slate-400">
-                                You are about to move <strong className="text-indigo-600 dark:text-indigo-400">{selectedProducts.length}</strong> products out of <strong className="text-slate-900 dark:text-white">{transferCategoryName}</strong>.
-                                Please select their new destination category below:
-                            </p>
-                        </div>
+                            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 mb-6 border border-slate-200 dark:border-slate-700">
+                                <p className="text-sm text-slate-600 dark:text-slate-400">
+                                    You are about to move <strong className="text-indigo-600 dark:text-indigo-400">{selectedProducts.length}</strong> products out of <strong className="text-slate-900 dark:text-white">{transferCategoryName}</strong>.
+                                    Please select their new destination category below:
+                                </p>
+                            </div>
 
-                        <div className="mb-6">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">Destination Category</label>
-                            <select
-                                value={transferDestination}
-                                onChange={(e) => setTransferDestination(e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none px-4 py-3 text-slate-900 dark:text-white focus:border-indigo-500 appearance-none cursor-pointer"
-                            >
-                                <option value="" disabled>Select a destination...</option>
-                                {categories
-                                    .filter(c => c.text !== transferCategoryName) // Don't allow transferring to the same category
-                                    .map(category => (
-                                        <option key={category._id} value={category.text}>
-                                            {category.text}
-                                        </option>
-                                    ))
-                                }
-                            </select>
-                            {categories.length <= 1 && (
-                                <p className="text-xs text-red-500 mt-2">You need at least two categories to perform a transfer.</p>
-                            )}
-                        </div>
+                            <div className="mb-6">
+                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">Destination Category</label>
+                                <select
+                                    value={transferDestination}
+                                    onChange={(e) => setTransferDestination(e.target.value)}
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none px-4 py-3 text-slate-900 dark:text-white focus:border-indigo-500 appearance-none cursor-pointer"
+                                >
+                                    <option value="" disabled>Select a destination...</option>
+                                    {categories
+                                        .filter(c => c.text !== transferCategoryName) // Don't allow transferring to the same category
+                                        .map(category => (
+                                            <option key={category._id} value={category.text}>
+                                                {category.text}
+                                            </option>
+                                        ))
+                                    }
+                                </select>
+                                {categories.length <= 1 && (
+                                    <p className="text-xs text-red-500 mt-2">You need at least two categories to perform a transfer.</p>
+                                )}
+                            </div>
 
-                        <div className="flex justify-end gap-3 font-medium">
-                            <button
-                                onClick={() => { setShowTransferModal(false); setTransferDestination(""); }}
-                                className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleTransferSelected}
-                                disabled={!transferDestination}
-                                className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white shadow-sm hover:shadow-indigo-500/20 transition-all font-medium flex items-center gap-2"
-                            >
-                                Transfer {selectedProducts.length} Items
-                            </button>
+                            <div className="flex justify-end gap-3 font-medium">
+                                <button
+                                    onClick={() => { setShowTransferModal(false); setTransferDestination(""); }}
+                                    className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleTransferSelected}
+                                    disabled={!transferDestination}
+                                    className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white shadow-sm hover:shadow-indigo-500/20 transition-all font-medium flex items-center gap-2"
+                                >
+                                    Transfer {selectedProducts.length} Items
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Advanced Delete Category Modal (When Products Exist) */}
-            {categoryToDelete && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200 border-2 border-red-500/20">
-                        <div className="flex items-center gap-3 text-red-600 mb-4">
-                            <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full">
-                                <Trash2 size={24} />
-                            </div>
-                            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Warning: Products Detected</h3>
-                        </div>
-
-                        <div className="bg-red-50 dark:bg-red-900/10 rounded-xl p-4 mb-6 border border-red-100 dark:border-red-900/30">
-                            <p className="text-sm text-red-800 dark:text-red-300">
-                                The category <strong className="font-bold">{categoryToDelete.text}</strong> currently contains <strong className="font-bold">{getProductsForCategory(categoryToDelete.text).length}</strong> products.
-                                Before deleting this category, you must decide what to do with its products.
-                            </p>
-                        </div>
-
-                        <div className="flex flex-col gap-3">
-                            <button
-                                onClick={() => {
-                                    // Trigger bulk transfer flow
-                                    const catProducts = getProductsForCategory(categoryToDelete.text);
-                                    setSelectedProducts(catProducts.map(p => p._id));
-                                    setTransferCategoryName(categoryToDelete.text);
-                                    setCategoryToDelete(null); // Close this modal
-                                    setShowTransferModal(true); // Open transfer modal
-                                }}
-                                className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 font-medium transition-colors border border-indigo-100 dark:border-indigo-800/50"
-                            >
-                                <CornerUpRight size={18} />
-                                Transfer Products First
-                            </button>
-
-                            <div className="relative py-2 flex items-center">
-                                <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
-                                <span className="flex-shrink-0 mx-4 text-slate-400 text-xs font-medium uppercase">OR</span>
-                                <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+            {
+                categoryToDelete && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200 border-2 border-red-500/20">
+                            <div className="flex items-center gap-3 text-red-600 mb-4">
+                                <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full">
+                                    <Trash2 size={24} />
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Warning: Products Detected</h3>
                             </div>
 
-                            <button
-                                onClick={() => {
-                                    if (window.confirm(`Are you absolutely sure? This will PERMANENTLY delete ${getProductsForCategory(categoryToDelete.text).length} products.`)) {
-                                        confirmDelete();
-                                    }
-                                }}
-                                className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white shadow-sm hover:shadow-red-500/20 font-medium transition-all"
-                            >
-                                <Trash2 size={18} />
-                                Delete Category AND All Products
-                            </button>
+                            <div className="bg-red-50 dark:bg-red-900/10 rounded-xl p-4 mb-6 border border-red-100 dark:border-red-900/30">
+                                <p className="text-sm text-red-800 dark:text-red-300">
+                                    The category <strong className="font-bold">{categoryToDelete.text}</strong> currently contains <strong className="font-bold">{getProductsForCategory(categoryToDelete.text).length}</strong> products.
+                                    Before deleting this category, you must decide what to do with its products.
+                                </p>
+                            </div>
 
-                            <button
-                                onClick={() => setCategoryToDelete(null)}
-                                className="w-full mt-2 px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors font-medium"
-                            >
-                                Cancel
-                            </button>
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    onClick={() => {
+                                        // Trigger bulk transfer flow
+                                        const catProducts = getProductsForCategory(categoryToDelete.text);
+                                        setSelectedProducts(catProducts.map(p => p._id));
+                                        setTransferCategoryName(categoryToDelete.text);
+                                        setCategoryToDelete(null); // Close this modal
+                                        setShowTransferModal(true); // Open transfer modal
+                                    }}
+                                    className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 font-medium transition-colors border border-indigo-100 dark:border-indigo-800/50"
+                                >
+                                    <CornerUpRight size={18} />
+                                    Transfer Products First
+                                </button>
+
+                                <div className="relative py-2 flex items-center">
+                                    <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+                                    <span className="flex-shrink-0 mx-4 text-slate-400 text-xs font-medium uppercase">OR</span>
+                                    <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+                                </div>
+
+                                <button
+                                    onClick={() => {
+                                        if (window.confirm(`Are you absolutely sure? This will PERMANENTLY delete ${getProductsForCategory(categoryToDelete.text).length} products.`)) {
+                                            confirmDelete();
+                                        }
+                                    }}
+                                    className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white shadow-sm hover:shadow-red-500/20 font-medium transition-all"
+                                >
+                                    <Trash2 size={18} />
+                                    Delete Category AND All Products
+                                </button>
+
+                                <button
+                                    onClick={() => setCategoryToDelete(null)}
+                                    className="w-full mt-2 px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors font-medium"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 

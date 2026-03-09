@@ -32,8 +32,32 @@ export const addCategory = async (req, res) => {
 
 export const getCategories = async (req, res) => {
     try {
-        const categories = await Category.find({}).sort({ name: 1 });
+        const categories = await Category.find({}).sort({ order: 1, _id: 1 });
         res.status(200).json({ success: true, categories });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Server error", error: error.message });
+    }
+};
+
+export const reorderCategories = async (req, res) => {
+    try {
+        const { orderedIds } = req.body;
+
+        if (!orderedIds || !Array.isArray(orderedIds)) {
+            return res.status(400).json({ success: false, message: "Invalid ordered array provided" });
+        }
+
+        // Use bulkWrite to perform multiple individual updates in a single database operation
+        const bulkOps = orderedIds.map((id, index) => ({
+            updateOne: {
+                filter: { _id: id },
+                update: { $set: { order: index } }
+            }
+        }));
+
+        await Category.bulkWrite(bulkOps);
+
+        res.status(200).json({ success: true, message: "Categories reordered successfully" });
     } catch (error) {
         res.status(500).json({ success: false, message: "Server error", error: error.message });
     }

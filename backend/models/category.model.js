@@ -11,8 +11,14 @@ const categorySchema = new mongoose.Schema({
         required: true,
     },
     bgColor: {
+    },
+    bgColor: {
         type: String,
         default: "#FEE0E0",
+    },
+    order: {
+        type: Number,
+        default: 0,
     }
 }, { timestamps: true });
 
