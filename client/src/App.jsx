@@ -26,6 +26,7 @@ import UserDetails from "./pages/seller/UserDetails";
 import SmtpSettings from "./pages/seller/SmtpSettings";
 import PageTransition from "./components/PageTransition";
 import CustomCursor from "./components/CustomCursor";
+import VerifyEmail from "./pages/VerifyEmail";
 
 const App = () => {
   const location = useLocation();
@@ -48,6 +49,7 @@ const App = () => {
             <Route path="/product/:category/:id" element={<PageTransition><SingleProduct /></PageTransition>} />
             <Route path="/cart" element={<PageTransition><Cart /></PageTransition>} />
             <Route path="/add-address" element={<PageTransition><Address /></PageTransition>} />
+            <Route path="/verify-email" element={<PageTransition><VerifyEmail /></PageTransition>} />
             <Route path="/profile" element={<PageTransition><ProfileLayout /></PageTransition>}>
               <Route index element={<ProfileInfo />} />
               <Route path="info" element={<ProfileInfo />} />

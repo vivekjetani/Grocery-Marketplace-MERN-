@@ -12,6 +12,7 @@ import addressRoutes from "./routes/address.routes.js";
 import orderRoutes from "./routes/order.routes.js";
 import reviewRoutes from "./routes/review.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
+import startCleanupJob from "./cron/cleanup.js";
 
 import { connectCloudinary } from "./config/cloudinary.js";
 
@@ -58,5 +59,7 @@ app.use("/api/category", categoryRoutes);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   connectDB();
+  startCleanupJob(); // Initialize daily cron job
   console.log(`Server is running on port ${PORT}`);
+  console.log(`FRONTEND_URL is set to: ${process.env.FRONTEND_URL}`);
 });

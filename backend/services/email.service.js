@@ -245,3 +245,34 @@ export const sendNewsletterEmail = async (toEmail, subject, htmlContent) => {
         console.error("Failed to send newsletter email:", error);
     }
 };
+
+// Send Verification Email
+export const sendVerificationEmail = async (toEmail, name, verificationToken) => {
+    try {
+        const transporter = await createTransporter();
+        const smtpSettings = await Smtp.findOne();
+
+        const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+
+        const content = `
+          <h2>Welcome to Grocery Marketplace, ${name}!</h2>
+          <p>Thank you for registering. Please verify your email address to activate your account.</p>
+          <div style="text-align: center; margin: 30px 0;">
+              <a href="${verificationUrl}" class="btn" style="padding: 12px 24px; font-size: 16px;">Verify Email Address</a>
+          </div>
+          <p style="font-size: 14px; color: #666;">If the button doesn't work, copy and paste this link into your browser:</p>
+          <p style="font-size: 14px; word-break: break-all; color: #4CAF50;">${verificationUrl}</p>
+          <p style="margin-top: 30px;">If you didn't create an account, you can safely ignore this email.</p>
+      `;
+
+        await transporter.sendMail({
+            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
+            to: toEmail,
+            subject: "Verify Your Email Address",
+            html: emailWrapper(content),
+        });
+    } catch (error) {
+        console.error("Failed to send verification email:", error);
+    }
+};
+

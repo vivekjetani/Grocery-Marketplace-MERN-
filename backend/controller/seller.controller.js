@@ -97,7 +97,9 @@ export const getUsersForSeller = async (req, res) => {
           email: 1,
           orderCount: { $size: "$orders" },
           reviewCount: { $size: "$reviews" },
-          totalSpent: { $sum: "$orders.amount" }
+          totalSpent: { $sum: "$orders.amount" },
+          isVerified: 1,
+          createdAt: 1
         }
       },
       {

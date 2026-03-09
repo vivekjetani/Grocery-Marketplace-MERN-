@@ -1,6 +1,8 @@
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import { sendVerificationEmail } from "../services/email.service.js";
 
 // register user: /api/user/register
 export const registerUser = async (req, res) => {
@@ -20,30 +22,25 @@ export const registerUser = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const verifyToken = crypto.randomBytes(32).toString("hex");
+
     const user = new User({
       name,
       email,
       password: hashedPassword,
+      verifyToken,
     });
     await user.save();
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
 
-    res.cookie("token", token, {
-      httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
-      secure: process.env.NODE_ENV === "production", // Use secure cookies in production
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "Strict", // Prevent CSRF attacks
-      maxAge: 7 * 24 * 60 * 60 * 1000, // Cookie expiration time (7 days)
-    });
+    await sendVerificationEmail(user.email, user.name, verifyToken);
+
     res.status(201).json({
-      message: "User registered successfully",
+      message: "Registration successful! Please verify your email to log in.",
       success: true,
       user: {
         name: user.name,
         email: user.email,
       },
-      token,
     });
   } catch (error) {
     console.error("Error in registerUser:", error);
@@ -67,6 +64,20 @@ export const loginUser = async (req, res) => {
       return res
         .status(400)
         .json({ message: "User does not exist", success: false });
+    }
+
+    if (!user.isVerified) {
+      // Regenerate token
+      const verifyToken = crypto.randomBytes(32).toString("hex");
+      user.verifyToken = verifyToken;
+      await user.save();
+
+      // Resend email
+      await sendVerificationEmail(user.email, user.name, verifyToken);
+
+      return res
+        .status(400)
+        .json({ message: "Account not verified. A new verification email has been sent.", success: false });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -135,3 +146,31 @@ export const logout = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+// verify email : /api/user/verify-email/:token
+export const verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const user = await User.findOne({ verifyToken: token });
+
+    if (!user) {
+      return res.status(400).json({
+        message: "Invalid or expired verification token",
+        success: false,
+      });
+    }
+
+    user.isVerified = true;
+    user.verifyToken = undefined;
+    await user.save();
+
+    res.status(200).json({
+      message: "Email verified successfully! You can now log in.",
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error in verifyEmail:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+

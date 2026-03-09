@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { AppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
-import { Users as UsersIcon, Trophy, Star, ShoppingBag, DollarSign, ChevronRight, Search } from "lucide-react";
+import { Users as UsersIcon, Trophy, Star, ShoppingBag, DollarSign, ChevronRight, Search, CheckCircle2, XCircle, CalendarDays } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const Users = () => {
@@ -91,6 +91,8 @@ const Users = () => {
                                 <tr className="bg-slate-50/50 dark:bg-slate-700/30 border-b border-slate-100 dark:border-slate-700 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
                                     <th className="p-4 pl-6 w-20 text-center">Rank</th>
                                     <th className="p-4">Customer</th>
+                                    <th className="p-4 text-center">Status</th>
+                                    <th className="p-4 text-center">Joined Date</th>
                                     <th className="p-4 text-center">Orders</th>
                                     <th className="p-4 text-center">Reviews</th>
                                     <th className="p-4 text-right">Total Spent</th>
@@ -119,6 +121,27 @@ const Users = () => {
                                         <td className="p-4">
                                             <p className="font-bold text-slate-900 dark:text-white leading-tight">{user.name}</p>
                                             <p className="text-xs text-slate-500 dark:text-slate-400">{user.email}</p>
+                                        </td>
+                                        <td className="p-4 text-center">
+                                            {user.isVerified ? (
+                                                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
+                                                    <CheckCircle2 size={13} />
+                                                    Verified
+                                                </div>
+                                            ) : (
+                                                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-bold text-xs">
+                                                    <XCircle size={13} />
+                                                    Unverified
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td className="p-4 text-center">
+                                            <div className="inline-flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-sm">
+                                                <CalendarDays size={14} />
+                                                {user.createdAt
+                                                    ? new Date(user.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                                                    : 'N/A'}
+                                            </div>
                                         </td>
                                         <td className="p-4 text-center">
                                             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-bold text-sm">

@@ -14,9 +14,16 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verifyToken: {
+      type: String,
+    },
     cartItems: { type: Object, default: {} },
   },
-  { minimize: false }
+  { minimize: false, timestamps: true }
 );
 
 const User = mongoose.model("User", userSchema);
