@@ -36,29 +36,31 @@ export const placeOrderCOD = async (req, res) => {
       await Product.findByIdAndUpdate(item.product, { $inc: { orderCount: 1 } });
     }
 
-    // Send emails
-    try {
-      const user = await User.findById(userId);
-      // Fetch populated order for email
-      const populatedOrder = await Order.findById(newOrder._id).populate("items.product");
+    // Send emails asynchronously (don't await)
+    (async () => {
+      try {
+        const user = await User.findById(userId);
+        // Fetch populated order for email
+        const populatedOrder = await Order.findById(newOrder._id).populate("items.product");
 
-      const orderDataForEmail = {
-        _id: populatedOrder._id,
-        amount: populatedOrder.amount,
-        products: populatedOrder.items.map(item => ({
-          name: item.product.name,
-          quantity: item.quantity,
-          price: item.product.offerPrice
-        }))
-      };
+        const orderDataForEmail = {
+          _id: populatedOrder._id,
+          amount: populatedOrder.amount,
+          products: populatedOrder.items.map(item => ({
+            name: item.product.name,
+            quantity: item.quantity,
+            price: item.product.offerPrice
+          }))
+        };
 
-      if (user) {
-        await sendOrderConfirmationEmail(user, orderDataForEmail);
-        await sendOrderAdminNotification(user, orderDataForEmail);
+        if (user) {
+          sendOrderConfirmationEmail(user, orderDataForEmail);
+          sendOrderAdminNotification(user, orderDataForEmail);
+        }
+      } catch (emailError) {
+        console.error("Failed to send order emails on COD completion:", emailError);
       }
-    } catch (emailError) {
-      console.error("Failed to send order emails on COD completion:", emailError);
-    }
+    })();
 
     res
       .status(201)
@@ -85,15 +87,17 @@ export const updateOrderStatus = async (req, res) => {
       return res.status(404).json({ message: "Order not found", success: false });
     }
 
-    // Send status update email
-    try {
-      const user = await User.findById(order.userId);
-      if (user) {
-        await sendOrderStatusUpdateEmail(user, order);
+    // Send status update email asynchronously
+    (async () => {
+      try {
+        const user = await User.findById(order.userId);
+        if (user) {
+          sendOrderStatusUpdateEmail(user, order);
+        }
+      } catch (emailError) {
+        console.error("Failed to send status update email:", emailError);
       }
-    } catch (emailError) {
-      console.error("Failed to send status update email:", emailError);
-    }
+    })();
 
     res.status(200).json({ message: "Order status updated", success: true, order });
   } catch (error) {

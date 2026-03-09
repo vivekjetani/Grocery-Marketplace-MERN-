@@ -23,6 +23,7 @@ const Cart = () => {
   const [showAddress, setShowAddress] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [paymentOption, setPaymentOption] = useState("COD");
+  const [loading, setLoading] = useState(false);
 
   const getCart = () => {
     let tempArray = [];
@@ -70,6 +71,7 @@ const Cart = () => {
       if (!selectedAddress) {
         return toast.error("Please select an address");
       }
+      setLoading(true);
       if (paymentOption === "COD") {
         const { data } = await axios.post("/api/order/cod", {
           items: cartArray.map((item) => ({
@@ -88,6 +90,8 @@ const Cart = () => {
       }
     } catch (error) {
       toast.error(error?.response?.data?.message || "Something went wrong.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -342,10 +346,11 @@ const Cart = () => {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={user ? placeOrder : () => toast.error("Please login to place an order")}
-                className="w-full mt-8 py-4 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-bold text-lg shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all flex items-center justify-center gap-2"
+                disabled={loading}
+                className={`w-full mt-8 py-4 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-bold text-lg shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all flex items-center justify-center gap-2 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
-                {paymentOption === "COD" ? "Place Order Now" : "Complete Purchase"}
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                {loading ? "Processing..." : (paymentOption === "COD" ? "Place Order Now" : "Complete Purchase")}
+                {!loading && <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>}
               </motion.button>
 
               <div className="mt-4 text-center">
