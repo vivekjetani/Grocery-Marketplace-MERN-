@@ -20,6 +20,10 @@ const productSchema = new mongoose.Schema({
     type: Array,
     required: true,
   },
+  unit: {
+    type: String,
+    default: "unit",
+  },
   category: {
     type: String,
     required: true,

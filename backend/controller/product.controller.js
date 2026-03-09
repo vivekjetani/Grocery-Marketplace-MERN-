@@ -4,7 +4,7 @@ import Order from "../models/order.model.js";
 // add product :/api/product/add
 export const addProduct = async (req, res) => {
   try {
-    const { name, price, offerPrice, description, category } = req.body;
+    const { name, price, offerPrice, description, category, unit } = req.body;
     // const image = req.files?.map((file) => `/uploads/${file.filename}`);
     const image = req.files?.map((file) => file.filename);
     if (
@@ -13,6 +13,7 @@ export const addProduct = async (req, res) => {
       !offerPrice ||
       !description ||
       !category ||
+      !unit ||
       !image ||
       image.length === 0
     ) {
@@ -28,6 +29,7 @@ export const addProduct = async (req, res) => {
       offerPrice,
       description,
       category,
+      unit,
       image,
     });
 
@@ -149,5 +151,180 @@ export const getRecommendedProducts = async (req, res) => {
     res.status(200).json({ success: true, products: recommendedProducts.slice(0, 10) });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// get product analytics
+export const getProductAnalytics = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = await Product.findById(id);
+
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    // Fetch all orders containing this product
+    const orders = await Order.find({
+      "items.product": id,
+      status: { $ne: "Cancelled" }
+    });
+
+    // Process orders for time-series data (last 30 days)
+    const last30Days = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      last30Days.push({
+        date: d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }),
+        fullDate: d.toISOString().split('T')[0],
+        orders: 0,
+        quantity: 0
+      });
+    }
+
+    let totalSold = 0;
+    let totalRevenue = 0;
+    const hourCounts = new Array(24).fill(0);
+
+    orders.forEach(order => {
+      const orderDate = new Date(order.createdAt).toISOString().split('T')[0];
+      const orderHour = new Date(order.createdAt).getHours();
+      hourCounts[orderHour]++;
+
+      const dayData = last30Days.find(d => d.fullDate === orderDate);
+
+      const productItem = order.items.find(item => item.product.toString() === id);
+      if (productItem) {
+        totalSold += productItem.quantity;
+        totalRevenue += productItem.quantity * product.offerPrice;
+        if (dayData) {
+          dayData.orders += 1;
+          dayData.quantity += productItem.quantity;
+        }
+      }
+    });
+
+    // Find peak hour
+    let peakHour = 0;
+    let maxOrdersInHour = 0;
+    hourCounts.forEach((count, hour) => {
+      if (count > maxOrdersInHour) {
+        maxOrdersInHour = count;
+        peakHour = hour;
+      }
+    });
+
+    // Formatting peak hour string
+    const peakHourStr = `${peakHour % 12 || 12}${peakHour >= 12 ? ' PM' : ' AM'}`;
+
+    res.status(200).json({
+      success: true,
+      analytics: {
+        totalSold,
+        totalRevenue,
+        peakHour: peakHourStr,
+        chartData: last30Days.map(({ date, orders, quantity }) => ({ date, orders, quantity })),
+        product: {
+          name: product.name,
+          price: product.price,
+          offerPrice: product.offerPrice,
+          averageRating: product.averageRating,
+          numReviews: product.numReviews,
+          image: product.image[0]
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Error in getProductAnalytics:", error);
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
+  }
+};
+
+// ----------------------------------------------------
+// NEW APIS: CATEGORY PRODUCT MANAGEMENT
+// ----------------------------------------------------
+import fs from "fs";
+import path from "path";
+
+// delete a single product
+export const deleteProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = await Product.findById(id);
+
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    // Delete associated images
+    if (product.image && product.image.length > 0) {
+      product.image.forEach((img) => {
+        const imagePath = path.join(process.cwd(), 'uploads', img);
+        if (fs.existsSync(imagePath)) {
+          fs.unlinkSync(imagePath);
+        }
+      });
+    }
+
+    await Product.findByIdAndDelete(id);
+    res.status(200).json({ success: true, message: "Product deleted successfully" });
+  } catch (error) {
+    console.error("Error in deleteProduct:", error);
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
+  }
+};
+
+// delete all products by category name
+export const deleteProductsByCategory = async (req, res) => {
+  try {
+    const { category } = req.body;
+    if (!category) {
+      return res.status(400).json({ success: false, message: "Category name is required" });
+    }
+
+    const products = await Product.find({ category });
+
+    // Cleanup images for all deleted products
+    products.forEach((product) => {
+      if (product.image && Array.isArray(product.image)) {
+        product.image.forEach((img) => {
+          const imagePath = path.join(process.cwd(), 'uploads', img);
+          if (fs.existsSync(imagePath)) {
+            fs.unlinkSync(imagePath);
+          }
+        });
+      }
+    });
+
+    await Product.deleteMany({ category });
+    res.status(200).json({ success: true, message: `All products in ${category} deleted` });
+  } catch (error) {
+    console.error("Error in deleteProductsByCategory:", error);
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
+  }
+};
+
+// transfer an array of products to a new category
+export const transferProducts = async (req, res) => {
+  try {
+    const { productIds, newCategory } = req.body;
+
+    if (!productIds || !Array.isArray(productIds) || productIds.length === 0) {
+      return res.status(400).json({ success: false, message: "Valid array of productIds is required" });
+    }
+    if (!newCategory) {
+      return res.status(400).json({ success: false, message: "Destination category is required" });
+    }
+
+    await Product.updateMany(
+      { _id: { $in: productIds } },
+      { $set: { category: newCategory } }
+    );
+
+    res.status(200).json({ success: true, message: "Products transferred successfully" });
+  } catch (error) {
+    console.error("Error in transferProducts:", error);
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
 };

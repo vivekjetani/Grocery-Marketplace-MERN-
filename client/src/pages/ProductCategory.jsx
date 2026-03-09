@@ -1,11 +1,10 @@
-import { categories } from "../assets/assets";
 import ProductCard from "../components/ProductCard";
 import { useAppContext } from "../context/AppContext";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
 const ProductCategory = () => {
-  const { products } = useAppContext();
+  const { products, categories } = useAppContext();
   const { category } = useParams();
 
   const searchCategory = categories.find(

@@ -13,6 +13,7 @@ export const AppContextProvider = ({ children }) => {
   const [isSeller, setIsSeller] = useState(false);
   const [showUserLogin, setShowUserLogin] = useState(false);
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [cartItems, setCartItems] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -89,6 +90,27 @@ export const AppContextProvider = ({ children }) => {
       toast.error(error.message);
     }
   };
+
+  // fetch and unify categories
+  const fetchCategories = async () => {
+    try {
+      const { data } = await axios.get("/api/category/list");
+      if (data.success) {
+        // Map backend categories to match the frontend shape
+        const dynamicCategories = data.categories.map((cat) => ({
+          _id: cat._id,
+          text: cat.name,
+          path: cat.name,
+          image: cat.image.startsWith("http") ? cat.image : `${import.meta.env.VITE_BACKEND_URL}/images/${cat.image}`,
+          bgColor: cat.bgColor || "#FEE0E0",
+          isDynamic: true,
+        }));
+        setCategories(dynamicCategories);
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
   // add product to cart
   const addToCart = (itemId) => {
     let cartData = structuredClone(cartItems || {}); // safeguard for undefined
@@ -144,6 +166,7 @@ export const AppContextProvider = ({ children }) => {
   };
   useEffect(() => {
     fetchSeller();
+    fetchCategories();
     fetchProducts();
     fetchUser();
   }, []);
@@ -175,6 +198,8 @@ export const AppContextProvider = ({ children }) => {
     showUserLogin,
     setShowUserLogin,
     products,
+    categories,
+    fetchCategories,
     cartItems,
     addToCart,
     updateCartItem,

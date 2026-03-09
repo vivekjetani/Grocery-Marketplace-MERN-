@@ -20,6 +20,7 @@ import SellerLayout from "./pages/seller/SellerLayout";
 import AddProduct from "./pages/seller/AddProduct";
 import ProductList from "./pages/seller/ProductList";
 import Orders from "./pages/seller/Orders";
+import CategoryManager from "./pages/seller/CategoryManager";
 import PageTransition from "./components/PageTransition";
 import CustomCursor from "./components/CustomCursor";
 
@@ -60,6 +61,7 @@ const App = () => {
                 element={isSeller ? <ProductList /> : null}
               />
               <Route path="orders" element={isSeller ? <Orders /> : null} />
+              <Route path="category-manager" element={isSeller ? <CategoryManager /> : null} />
             </Route>
           </Routes>
         </AnimatePresence>

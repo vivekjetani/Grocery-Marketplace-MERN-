@@ -1,9 +1,8 @@
-import { categories } from "../assets/assets";
 import { useAppContext } from "../context/AppContext";
 import { motion } from "framer-motion";
 
 const Category = () => {
-    const { navigate } = useAppContext();
+    const { navigate, categories } = useAppContext();
 
     const container = {
         hidden: { opacity: 0 },
@@ -27,6 +26,7 @@ const Category = () => {
             </h2>
 
             <motion.div
+                key={categories.length}
                 variants={container}
                 initial="hidden"
                 whileInView="show"
@@ -51,12 +51,14 @@ const Category = () => {
                         {/* Decorative glow inside card */}
                         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-t from-black/5 to-transparent dark:from-white/10 dark:to-transparent"></div>
 
-                        <img
-                            src={category.image}
-                            alt={category.text}
-                            className="max-w-24 md:max-w-28 drop-shadow-md transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 relative z-10"
-                        />
-                        <p className="mt-4 text-sm md:text-base font-bold text-slate-800 dark:text-slate-200 tracking-wide relative z-10">{category.text}</p>
+                        <div className="h-24 md:h-28 w-full flex items-center justify-center relative z-10 mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
+                            <img
+                                src={category.image}
+                                alt={category.text}
+                                className="max-h-full max-w-full object-contain drop-shadow-md"
+                            />
+                        </div>
+                        <p className="text-sm md:text-base font-bold text-slate-800 dark:text-slate-200 tracking-wide relative z-10 text-center">{category.text}</p>
                     </motion.div>
                 ))}
             </motion.div>
