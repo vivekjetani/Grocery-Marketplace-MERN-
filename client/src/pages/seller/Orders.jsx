@@ -11,7 +11,7 @@ const Orders = () => {
   const fetchOrders = async () => {
     try {
       const { data } = await axios.get("/api/order/seller");
-      if (data.success) setOrders(data.orders);
+      if (data.success) setOrders(data.orders.filter(o => o && o.items && o.address));
       else toast.error(data.message);
     } catch (error) {
       toast.error(error.message);
@@ -77,7 +77,7 @@ const Orders = () => {
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Order ID</p>
-                    <p className="font-mono text-sm text-slate-700 dark:text-slate-300">#{order._id.slice(-8).toUpperCase()}</p>
+                    <p className="font-mono text-sm text-slate-700 dark:text-slate-300">#{order._id?.slice(-8).toUpperCase()}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-6">
@@ -104,19 +104,19 @@ const Orders = () => {
                     <Package size={16} />
                     <span className="text-xs font-bold uppercase tracking-wider">Order Items</span>
                   </div>
-                  {order.items.map((item, itemIdx) => (
+                  {order.items.filter(item => item.product).map((item, itemIdx) => (
                     <div key={itemIdx} className="flex gap-4 items-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-700/20 group-hover:bg-indigo-50/30 dark:group-hover:bg-indigo-900/10 transition-colors">
                       <img
                         className="w-14 h-14 object-cover rounded-xl border border-slate-200 dark:border-slate-600"
-                        src={`${import.meta.env.VITE_BACKEND_URL}/images/${item.product.image[0]}`}
-                        alt={item.product.name}
+                        src={item.product?.image?.[0] ? `${import.meta.env.VITE_BACKEND_URL}/images/${item.product.image[0]}` : ""}
+                        alt={item.product?.name || "Product"}
                       />
                       <div className="flex-grow">
-                        <p className="font-bold text-slate-900 dark:text-white leading-tight">{item.product.name}</p>
+                        <p className="font-bold text-slate-900 dark:text-white leading-tight">{item.product?.name || "Deleted Product"}</p>
                         <p className="text-xs font-bold text-indigo-500 mt-1">Quantity: {item.quantity}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-black text-slate-900 dark:text-white">₹{item.product.offerPrice * item.quantity}</p>
+                        <p className="font-black text-slate-900 dark:text-white">₹{(item.product?.offerPrice ?? 0) * item.quantity}</p>
                       </div>
                     </div>
                   ))}
@@ -129,13 +129,13 @@ const Orders = () => {
                     <span className="text-xs font-bold uppercase tracking-wider">Customer Details</span>
                   </div>
                   <div className="p-4 rounded-2xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800/50 h-full">
-                    <p className="font-bold text-slate-900 dark:text-white mb-2">{order.address.firstName} {order.address.lastName}</p>
+                    <p className="font-bold text-slate-900 dark:text-white mb-2">{order.address?.firstName} {order.address?.lastName}</p>
                     <div className="flex gap-2 items-start mt-3">
                       <MapPin size={16} className="text-indigo-500 shrink-0 mt-0.5" />
                       <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-                        {order.address.street},<br />
-                        {order.address.city}, {order.address.state},<br />
-                        {order.address.zipcode}, {order.address.country}
+                        {order.address?.street},<br />
+                        {order.address?.city}, {order.address?.state},<br />
+                        {order.address?.zipcode}, {order.address?.country}
                       </p>
                     </div>
                   </div>
