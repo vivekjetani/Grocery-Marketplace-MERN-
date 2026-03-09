@@ -22,6 +22,20 @@ const Orders = () => {
     fetchOrders();
   }, []);
 
+  const handleStatusChange = async (orderId, newStatus) => {
+    try {
+      const { data } = await axios.put(`/api/order/status/${orderId}`, { status: newStatus });
+      if (data.success) {
+        toast.success("Order status updated and mail sent!");
+        fetchOrders();
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message);
+    }
+  };
+
   return (
     <div className="md:p-10 p-4 max-w-6xl mx-auto space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -131,18 +145,35 @@ const Orders = () => {
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 mb-2">
                     <CreditCard size={16} />
-                    <span className="text-xs font-bold uppercase tracking-wider">Payment Summary</span>
+                    <span className="text-xs font-bold uppercase tracking-wider">Payment & Status</span>
                   </div>
-                  <div className="p-5 rounded-2xl bg-indigo-600 dark:bg-indigo-500 text-white shadow-lg shadow-indigo-200 dark:shadow-none h-full flex flex-col justify-between">
-                    <div>
-                      <p className="text-indigo-100/80 text-xs font-bold uppercase tracking-widest mb-1">Total Amount</p>
-                      <p className="text-3xl font-black">₹{order.amount}</p>
-                    </div>
-                    <div className="mt-4 pt-4 border-t border-indigo-400/30">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase tracking-widest opacity-80">Method:</span>
-                        <span className="font-black text-sm">{order.paymentType}</span>
+                  <div className="flex flex-col gap-4 h-full">
+                    <div className="p-5 rounded-2xl bg-indigo-600 dark:bg-indigo-500 text-white shadow-lg shadow-indigo-200 dark:shadow-none flex flex-col justify-between">
+                      <div>
+                        <p className="text-indigo-100/80 text-xs font-bold uppercase tracking-widest mb-1">Total Amount</p>
+                        <p className="text-3xl font-black">₹{order.amount}</p>
                       </div>
+                      <div className="mt-4 pt-4 border-t border-indigo-400/30">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold uppercase tracking-widest opacity-80">Method:</span>
+                          <span className="font-black text-sm">{order.paymentType}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">Update Status</p>
+                      <select
+                        className="w-full bg-white dark:bg-slate-800 border-none rounded-xl px-3 py-2 text-sm font-bold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none"
+                        value={order.status || 'Order Placed'}
+                        onChange={(e) => handleStatusChange(order._id, e.target.value)}
+                      >
+                        <option value="Order Placed">Order Placed</option>
+                        <option value="Confirmed">Confirmed</option>
+                        <option value="Out for Delivery">Out for Delivery</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Cancelled">Cancelled</option>
+                      </select>
                     </div>
                   </div>
                 </div>

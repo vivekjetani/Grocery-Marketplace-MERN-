@@ -23,6 +23,7 @@ import Orders from "./pages/seller/Orders";
 import CategoryManager from "./pages/seller/CategoryManager";
 import Users from "./pages/seller/Users";
 import UserDetails from "./pages/seller/UserDetails";
+import SmtpSettings from "./pages/seller/SmtpSettings";
 import PageTransition from "./components/PageTransition";
 import CustomCursor from "./components/CustomCursor";
 
@@ -66,6 +67,7 @@ const App = () => {
               <Route path="category-manager" element={isSeller ? <CategoryManager /> : null} />
               <Route path="users" element={isSeller ? <Users /> : null} />
               <Route path="users/:id" element={isSeller ? <UserDetails /> : null} />
+              <Route path="smtp" element={isSeller ? <SmtpSettings /> : null} />
             </Route>
           </Routes>
         </AnimatePresence>

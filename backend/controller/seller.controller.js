@@ -3,6 +3,8 @@ import User from "../models/user.model.js";
 import Order from "../models/order.model.js";
 import Review from "../models/review.model.js";
 import Address from "../models/address.model.js";
+import Smtp from "../models/smtp.model.js";
+import { sendTestEmail } from "../services/email.service.js";
 import mongoose from "mongoose";
 // seller login :/api/seller/login
 export const sellerLogin = async (req, res) => {
@@ -170,5 +172,57 @@ export const deleteUserForSeller = async (req, res) => {
   } catch (error) {
     console.error("Error in deleteUserForSeller:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// get SMTP settings: /api/seller/smtp
+export const getSmtpSettings = async (req, res) => {
+  try {
+    const smtp = await Smtp.findOne();
+    res.status(200).json({ success: true, smtp });
+  } catch (error) {
+    console.error("Error in getSmtpSettings:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// update SMTP settings: /api/seller/smtp
+export const updateSmtpSettings = async (req, res) => {
+  try {
+    const { host, port, user, password, admins, fromEmail, isEnabled } = req.body;
+    let smtp = await Smtp.findOne();
+    if (smtp) {
+      smtp.host = host;
+      smtp.port = port;
+      smtp.user = user;
+      if (password) {
+        smtp.password = password;
+      }
+      smtp.admins = admins;
+      smtp.fromEmail = fromEmail;
+      smtp.isEnabled = isEnabled;
+      await smtp.save();
+    } else {
+      smtp = await Smtp.create({ host, port, user, password, admins, fromEmail, isEnabled });
+    }
+    res.status(200).json({ message: "SMTP settings updated", success: true, smtp });
+  } catch (error) {
+    console.error("Error in updateSmtpSettings:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// test SMTP settings: /api/seller/smtp/test
+export const testSmtpConnection = async (req, res) => {
+  try {
+    const { toEmail } = req.body;
+    if (!toEmail) {
+      return res.status(400).json({ message: "toEmail is required", success: false });
+    }
+    const result = await sendTestEmail(toEmail);
+    res.status(200).json({ message: "Test email sent successfully", success: true, result });
+  } catch (error) {
+    console.error("Error in testSmtpConnection:", error);
+    res.status(500).json({ message: "Failed to send test email. Check your SMTP settings.", error: error.message, success: false });
   }
 };
