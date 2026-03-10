@@ -13,6 +13,8 @@ const orderSchema = new mongoose.Schema(
     status: { type: String, default: "Order Placed" },
     paymentType: { type: String, required: true },
     isPaid: { type: Boolean, required: true, default: false },
+    couponCode: { type: String, default: null },
+    discountAmount: { type: Number, default: 0 },
     // Captain delivery fields
     captainId: { type: mongoose.Schema.Types.ObjectId, ref: "Captain", default: null },
     deliveryOtp: { type: String, default: null },

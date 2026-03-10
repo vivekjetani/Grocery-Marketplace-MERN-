@@ -163,6 +163,12 @@ const UserDetails = () => {
                                             <Package size={14} className="text-slate-400" />
                                             {order.items.length} Items
                                         </p>
+                                        {order.discountAmount > 0 && (
+                                            <p className="text-sm font-bold text-primary flex items-center gap-1.5 bg-primary/5 px-3 py-1.5 rounded-lg w-fit border border-primary/10">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                                                Coupon: {order.couponCode} (-₹{order.discountAmount})
+                                            </p>
+                                        )}
                                     </div>
 
                                     {/* Items details */}

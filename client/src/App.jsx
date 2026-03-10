@@ -34,6 +34,7 @@ import ReviewFromEmail from "./pages/ReviewFromEmail";
 import PageTransition from "./components/PageTransition";
 import CustomCursor from "./components/CustomCursor";
 import VerifyEmail from "./pages/VerifyEmail";
+import Coupons from "./pages/seller/Coupons";
 
 const App = () => {
   const location = useLocation();
@@ -113,6 +114,7 @@ const App = () => {
               <Route path="captains" element={isSeller ? <Captains /> : null} />
               <Route path="users" element={isSeller ? <Users /> : null} />
               <Route path="users/:id" element={isSeller ? <UserDetails /> : null} />
+              <Route path="coupons" element={isSeller ? <Coupons /> : null} />
               <Route path="smtp" element={isSeller ? <SmtpSettings /> : null} />
             </Route>
           </Routes>

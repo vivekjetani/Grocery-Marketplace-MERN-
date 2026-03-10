@@ -2,6 +2,7 @@ import Order from "../models/order.model.js";
 import Product from "../models/product.model.js";
 import Captain from "../models/captain.model.js";
 import Address from "../models/address.model.js";
+import Coupon from "../models/coupon.model.js";
 
 import {
   sendOrderConfirmationEmail,
@@ -18,7 +19,7 @@ const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 export const placeOrderCOD = async (req, res) => {
   try {
     const userId = req.user;
-    const { items, address } = req.body;
+    const { items, address, couponCode } = req.body;
     if (!address || !items || items.length === 0) {
       return res
         .status(400)
@@ -52,6 +53,23 @@ export const placeOrderCOD = async (req, res) => {
       return (await acc) + product.offerPrice * item.quantity;
     }, 0);
 
+    let discountAmount = 0;
+    if (couponCode) {
+      const coupon = await Coupon.findOne({ code: couponCode.toUpperCase() });
+      if (coupon && coupon.isActive && (!coupon.expirationDate || new Date(coupon.expirationDate) >= new Date())) {
+        if (coupon.code === "WELCOME50") {
+          const userOrdersCount = await Order.countDocuments({ userId });
+          if (userOrdersCount === 0) {
+            discountAmount = coupon.discountPercentage ? (amount * coupon.discountPercentage) / 100 : coupon.flatRate || 0;
+          }
+        } else {
+          discountAmount = coupon.discountPercentage ? (amount * coupon.discountPercentage) / 100 : coupon.flatRate || 0;
+        }
+      }
+      if (discountAmount > amount) discountAmount = amount;
+      amount -= discountAmount;
+    }
+
     // Add tax charge 2%
     amount += Math.floor((amount * 2) / 100);
 
@@ -66,7 +84,14 @@ export const placeOrderCOD = async (req, res) => {
       paymentType: "COD",
       isPaid: false,
       deliveryOtp,
+      couponCode: discountAmount > 0 ? couponCode.toUpperCase() : null,
+      discountAmount: Math.floor(discountAmount),
     });
+
+    // Increment coupon usage count if applicable
+    if (discountAmount > 0 && couponCode) {
+      await Coupon.findOneAndUpdate({ code: couponCode.toUpperCase() }, { $inc: { usedCount: 1 } });
+    }
 
     // Increment orderCount and reduce stock for each product
     for (const item of items) {

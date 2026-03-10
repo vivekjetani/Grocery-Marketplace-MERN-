@@ -16,6 +16,8 @@ const Cart = () => {
     updateCartItem,
     axios,
     user,
+    appliedCoupon,
+    setAppliedCoupon,
   } = useAppContext();
 
   const [cartArray, setCartArray] = useState([]);
@@ -25,6 +27,44 @@ const Cart = () => {
   const [paymentOption, setPaymentOption] = useState("COD");
   const [loading, setLoading] = useState(false);
   const [outOfStockAlert, setOutOfStockAlert] = useState(null);
+
+  const [couponCodeInput, setCouponCodeInput] = useState(appliedCoupon ? appliedCoupon.code : "");
+  // const [appliedCoupon, setAppliedCoupon] = useState(null); // Removed local state
+  const [loadingCoupon, setLoadingCoupon] = useState(false);
+  const [couponMessage, setCouponMessage] = useState(appliedCoupon ? { type: "success", text: "Coupon applied successfully" } : { type: "", text: "" });
+
+  const applyCoupon = async () => {
+    if (!couponCodeInput.trim()) return;
+    try {
+      setLoadingCoupon(true);
+      setCouponMessage({ type: "", text: "" });
+      const { data } = await axios.post("/api/coupon/apply", {
+        code: couponCodeInput,
+        cartTotal: totalCartAmount(),
+      });
+      if (data.success) {
+        setAppliedCoupon({
+          code: data.couponCode,
+          discountAmount: data.discountAmount,
+        });
+        setCouponMessage({ type: "success", text: data.message });
+      } else {
+        setCouponMessage({ type: "error", text: data.message });
+        setAppliedCoupon(null);
+      }
+    } catch (error) {
+      setCouponMessage({ type: "error", text: error?.response?.data?.message || "Invalid coupon" });
+      setAppliedCoupon(null);
+    } finally {
+      setLoadingCoupon(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCodeInput("");
+    setCouponMessage({ type: "", text: "" });
+  };
 
   const getCart = () => {
     let tempArray = [];
@@ -65,7 +105,52 @@ const Cart = () => {
     if (products.length > 0 && cartItems) {
       getCart();
     }
+    // simple approach to re-validate: if cart total drops below discount, clear it
+    if (appliedCoupon && totalCartAmount() < appliedCoupon.discountAmount) {
+      removeCoupon();
+      toast("Cart updated. Please re-apply your coupon.");
+    }
   }, [products, cartItems]);
+
+  // Auto-apply WELCOME50 for new users
+  useEffect(() => {
+    const autoApplyWelcomeCoupon = async () => {
+      // Only proceed if user is logged in, cart has items, and we haven't attempted auto-apply for THIS user
+      if (user && cartArray.length > 0 && !appliedCoupon && sessionStorage.getItem('welcomeCouponAutoApplied') !== user._id) {
+        try {
+          const { data } = await axios.get("/api/order/user");
+          if (data.success && data.orders.length === 0) {
+            // New user detected, try applying welcome50
+            const res = await axios.post("/api/coupon/apply", {
+              code: "WELCOME50",
+              cartTotal: totalCartAmount(),
+            });
+
+            if (res.data.success) {
+              setAppliedCoupon({
+                code: res.data.couponCode,
+                discountAmount: res.data.discountAmount,
+              });
+              setCouponMessage({ type: "success", text: "Welcome bonus! 50% discount automatically applied." });
+              setCouponCodeInput("WELCOME50");
+              toast.success("Welcome discount applied! 🎉");
+            }
+          }
+          // Mark as attempted for this specific user ID
+          sessionStorage.setItem('welcomeCouponAutoApplied', user._id);
+        } catch (error) {
+          console.error("Auto apply coupon failed", error);
+        }
+      }
+    };
+
+    // Use a small delay to allow cart calculations and auth to settle
+    const timer = setTimeout(() => {
+      autoApplyWelcomeCoupon();
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [user, cartArray.length, appliedCoupon]);
 
   const placeOrder = async () => {
     try {
@@ -80,6 +165,7 @@ const Cart = () => {
             quantity: item.quantity,
           })),
           address: selectedAddress._id,
+          couponCode: appliedCoupon ? appliedCoupon.code : null,
         });
         if (data.success) {
           toast.success("Order placed successfully! 🎉");
@@ -328,13 +414,50 @@ const Cart = () => {
               </div>
 
               <div className="space-y-4 border-t border-slate-100 dark:border-slate-700 pt-6">
+
+                {/* Coupon Input Area */}
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    placeholder="Coupon Code"
+                    value={couponCodeInput}
+                    onChange={(e) => setCouponCodeInput(e.target.value)}
+                    disabled={appliedCoupon}
+                    className="flex-1 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl px-4 py-2 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all uppercase text-sm font-bold"
+                  />
+                  {appliedCoupon ? (
+                    <button onClick={removeCoupon} className="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold rounded-xl hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors text-sm">
+                      Remove
+                    </button>
+                  ) : (
+                    <button onClick={applyCoupon} disabled={loadingCoupon || !couponCodeInput.trim()} className="px-4 py-2 bg-slate-900 dark:bg-slate-700 text-white font-bold rounded-xl hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors disabled:opacity-50 text-sm">
+                      {loadingCoupon ? "..." : "Apply"}
+                    </button>
+                  )}
+                </div>
+                {couponMessage.text && (
+                  <p className={`text-xs font-bold mt-1 mb-4 ${couponMessage.type === 'success' ? 'text-green-500' : 'text-red-500'}`}>
+                    {couponMessage.text}
+                  </p>
+                )}
+
                 <div className="flex justify-between items-center text-slate-600 dark:text-slate-400 font-medium">
                   <span>Subtotal</span>
                   <span className="text-slate-900 dark:text-white font-bold">₹{totalCartAmount().toFixed(2)}</span>
                 </div>
+
+                {appliedCoupon && (
+                  <div className="flex justify-between items-center text-green-600 dark:text-green-400 font-medium">
+                    <span>Discount ({appliedCoupon.code})</span>
+                    <span className="font-bold">-₹{appliedCoupon.discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between items-center text-slate-600 dark:text-slate-400 font-medium">
                   <span>Estimated Tax (2%)</span>
-                  <span className="text-slate-900 dark:text-white font-bold">₹{((totalCartAmount() * 2) / 100).toFixed(2)}</span>
+                  <span className="text-slate-900 dark:text-white font-bold">
+                    ₹{(((totalCartAmount() - (appliedCoupon?.discountAmount || 0)) * 2) / 100).toFixed(2)}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center text-slate-600 dark:text-slate-400 font-medium">
                   <span>Shipping</span>
@@ -343,7 +466,9 @@ const Cart = () => {
 
                 <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-end">
                   <span className="text-lg font-bold text-slate-900 dark:text-white">Total</span>
-                  <span className="text-3xl font-black text-primary">₹{(totalCartAmount() + (totalCartAmount() * 2) / 100).toFixed(2)}</span>
+                  <span className="text-3xl font-black text-primary">
+                    ₹{((totalCartAmount() - (appliedCoupon?.discountAmount || 0)) + (((totalCartAmount() - (appliedCoupon?.discountAmount || 0)) * 2) / 100)).toFixed(2)}
+                  </span>
                 </div>
               </div>
 

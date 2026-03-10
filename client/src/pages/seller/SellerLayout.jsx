@@ -4,6 +4,20 @@ import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 import { AnimatePresence } from "framer-motion";
 import SubPageTransition from "../../components/SubPageTransition";
+import {
+  LayoutDashboard,
+  ShoppingBag,
+  List,
+  PlusSquare,
+  Layers,
+  Users,
+  Ticket,
+  Truck,
+  Mail,
+  Moon,
+  Sun,
+  LogOut
+} from "lucide-react";
 
 const SellerLayout = () => {
   const { isSeller, setIsSeller, axios, navigate, isDarkMode, setIsDarkMode } = useAppContext();
@@ -19,14 +33,15 @@ const SellerLayout = () => {
   // 6. Captains     — delivery staff
   // 7. SMTP Settings — configuration, rarely touched
   const sidebarLinks = [
-    { name: "Dashboard", path: "/seller", icon: assets.order_icon },
-    { name: "Orders", path: "/seller/orders", icon: assets.order_icon },
-    { name: "Product List", path: "/seller/product-list", icon: assets.product_list_icon },
-    { name: "Add Product", path: "/seller/add-product", icon: assets.add_icon },
-    { name: "Categories", path: "/seller/category-manager", icon: assets.add_icon },
-    { name: "Users", path: "/seller/users", icon: assets.profile_icon },
-    { name: "Captains", path: "/seller/captains", icon: assets.order_icon },
-    { name: "SMTP Settings", path: "/seller/smtp", icon: assets.order_icon },
+    { name: "Dashboard", path: "/seller", icon: LayoutDashboard },
+    { name: "Orders", path: "/seller/orders", icon: ShoppingBag },
+    { name: "Product List", path: "/seller/product-list", icon: List },
+    { name: "Add Product", path: "/seller/add-product", icon: PlusSquare },
+    { name: "Categories", path: "/seller/category-manager", icon: Layers },
+    { name: "Users", path: "/seller/users", icon: Users },
+    { name: "Coupons", path: "/seller/coupons", icon: Ticket },
+    { name: "Captains", path: "/seller/captains", icon: Truck },
+    { name: "SMTP Settings", path: "/seller/smtp", icon: Mail },
   ];
 
   const logout = async () => {
@@ -65,8 +80,9 @@ const SellerLayout = () => {
 
           <button
             onClick={logout}
-            className="border border-slate-300 dark:border-slate-600 rounded-full text-sm px-4 py-1 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors"
+            className="flex items-center gap-2 border border-slate-300 dark:border-slate-600 rounded-full text-sm px-4 py-1.5 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors"
           >
+            <LogOut size={16} />
             Logout
           </button>
         </div>
@@ -86,8 +102,8 @@ const SellerLayout = () => {
                 }`
               }
             >
-              <img src={item.icon} alt={item.name} className="w-7 h-7 dark:invert dark:opacity-80" />
-              <p className="md:block hidden text-center">{item.name}</p>
+              <item.icon size={24} strokeWidth={2} />
+              <p className="md:block hidden font-medium">{item.name}</p>
             </NavLink>
           ))}
         </div>

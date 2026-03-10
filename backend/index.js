@@ -13,6 +13,7 @@ import orderRoutes from "./routes/order.routes.js";
 import reviewRoutes from "./routes/review.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
 import captainRoutes from "./routes/captain.routes.js";
+import couponRoutes from "./routes/coupon.routes.js";
 import startCleanupJob from "./cron/cleanup.js";
 import { startLowStockAlertJob } from "./cron/lowStockAlert.js";
 
@@ -40,7 +41,7 @@ app.use(
       return callback(null, true);
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
@@ -58,6 +59,7 @@ app.use("/api/order", orderRoutes);
 app.use("/api/review", reviewRoutes);
 app.use("/api/category", categoryRoutes);
 app.use("/api/captain", captainRoutes);
+app.use("/api/coupon", couponRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

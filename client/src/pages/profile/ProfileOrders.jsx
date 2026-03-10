@@ -106,6 +106,16 @@ const ProfileOrders = () => {
                 </div>
               )}
 
+              {/* Coupon Info */}
+              {order.discountAmount > 0 && (
+                <div className="px-6 py-2 bg-primary/5 border-b border-primary/10 flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  <span className="text-xs font-bold text-primary uppercase tracking-wider">Coupon Applied:</span>
+                  <span className="text-xs font-mono font-bold text-primary-dark/80 bg-white dark:bg-slate-900 px-2 py-0.5 rounded border border-primary/20">{order.couponCode}</span>
+                  <span className="text-xs font-bold text-primary ml-auto">-₹{order.discountAmount.toFixed(2)}</span>
+                </div>
+              )}
+
               {/* Order Items */}
               {order.items.map((item, itemIndex) => (
                 <div key={itemIndex} className={`flex flex-col md:flex-row md:items-center justify-between p-4 md:px-6 gap-4 ${order.items.length !== itemIndex + 1 ? "border-b border-slate-100 dark:border-slate-700" : ""}`}>
@@ -124,9 +134,9 @@ const ProfileOrders = () => {
                       <span className="font-bold text-slate-900 dark:text-white">{item.quantity || "1"}</span>
                     </div>
                     <span className={`text-xs font-bold px-3 py-1 rounded-full ${order.status === "Delivered" ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
-                        : order.status === "Cancelled" || order.status === "Rejected" ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
-                          : order.status === "In Progress" ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400"
-                            : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+                      : order.status === "Cancelled" || order.status === "Rejected" ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                        : order.status === "In Progress" ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400"
+                          : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
                       }`}>{order.status}</span>
                     <span className="text-slate-500 dark:text-slate-400 text-xs font-medium">{new Date(order.createdAt).toLocaleDateString()}</span>
                     <span className="font-black text-slate-900 dark:text-white text-base">₹{(item.product.offerPrice * item.quantity).toFixed(2)}</span>

@@ -15,6 +15,7 @@ export const AppContextProvider = ({ children }) => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [cartItems, setCartItems] = useState({});
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== "undefined") {
@@ -213,6 +214,8 @@ export const AppContextProvider = ({ children }) => {
     setCartItems,
     isDarkMode,
     setIsDarkMode,
+    appliedCoupon,
+    setAppliedCoupon,
     backendUrl: import.meta.env.VITE_BACKEND_URL,
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

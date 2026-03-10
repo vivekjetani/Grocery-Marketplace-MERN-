@@ -8,7 +8,7 @@ const Auth = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { setShowUserLogin, setUser, axios, navigate } = useAppContext();
+  const { setShowUserLogin, setUser, axios, navigate, setAppliedCoupon } = useAppContext();
 
   const handleSubmit = async (e) => {
     try {
@@ -22,6 +22,7 @@ const Auth = () => {
         toast.success(data.message);
         if (state === "login") {
           setUser(data.user);
+          setAppliedCoupon(null); // Fresh start on login
           setShowUserLogin(false);
           navigate("/");
         } else {
