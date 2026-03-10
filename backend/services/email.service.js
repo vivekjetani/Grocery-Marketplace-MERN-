@@ -125,6 +125,14 @@ export const sendOrderConfirmationEmail = async (user, order) => {
         <p style="margin-top: 30px;">
             <a href="${process.env.FRONTEND_URL}/profile" class="btn">View Order Status</a>
         </p>
+
+        ${order.deliveryOtp ? `
+        <div style="margin:24px 0;padding:20px;background:#f0f4ff;border:2px solid #6366f1;border-radius:10px;text-align:center;">
+          <p style="margin:0 0 6px;font-size:13px;color:#4f46e5;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">🔐 Your Delivery OTP</p>
+          <p style="margin:0;font-size:36px;font-weight:900;letter-spacing:10px;color:#4338ca;font-family:monospace;">${order.deliveryOtp}</p>
+          <p style="margin:10px 0 0;font-size:12px;color:#6b7280;">Share this with your delivery captain to confirm receipt of your order.</p>
+        </div>
+        ` : ''}
     `;
 
         await transporter.sendMail({

@@ -63,6 +63,7 @@ export const placeOrderCOD = async (req, res) => {
         const orderDataForEmail = {
           _id: populatedOrder._id,
           amount: populatedOrder.amount,
+          deliveryOtp: newOrder.deliveryOtp,
           products: populatedOrder.items.map(item => ({
             name: item.product.name,
             quantity: item.quantity,
