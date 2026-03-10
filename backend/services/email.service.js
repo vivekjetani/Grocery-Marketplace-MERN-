@@ -531,3 +531,51 @@ export const sendLowStockAlertEmail = async (products, adminEmails) => {
     }
 };
 
+// Send Career Application Alert to Admin/HR Recipients
+export const sendCareerApplicationEmail = async (application, career, adminEmails) => {
+    try {
+        const transporter = await createTransporter();
+        const smtpSettings = await Smtp.findOne();
+
+        const resumeLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/images/${application.resumeUrl}`;
+
+        const content = `
+          <h2 style="color:#2563eb;">📄 New Job Application Received</h2>
+          <p>A new application has been submitted for the position of <strong>${career.title}</strong>.</p>
+
+          <div style="margin:20px 0;padding:20px;background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #2563eb;border-radius:6px;">
+            <p style="margin:5px 0;"><strong>Applicant Name:</strong> ${application.applicantName}</p>
+            <p style="margin:5px 0;"><strong>Email:</strong> <a href="mailto:${application.applicantEmail}">${application.applicantEmail}</a></p>
+            <p style="margin:5px 0;"><strong>Phone:</strong> ${application.applicantPhone || 'N/A'}</p>
+            ${application.coverLetter ? `<p style="margin:10px 0 5px;"><strong>Cover Letter:</strong></p><div style="background:#fff;padding:10px;border-radius:4px;border:1px solid #e2e8f0;">${application.coverLetter.replace(/\\n/g, '<br>')}</div>` : ''}
+          </div>
+
+          <div style="margin-top:20px;text-align:center;">
+             <a href="${resumeLink}" class="btn" style="background-color:#2563eb;color:#fff;text-decoration:none;padding:12px 24px;border-radius:4px;font-weight:bold;display:inline-block;">View / Download Resume</a>
+          </div>
+
+          <p style="margin-top:30px;font-size:13px;color:#64748b;">
+            To manage this application, <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/seller/careers">log in to the Admin Dashboard</a>.
+          </p>
+        `;
+
+        await transporter.sendMail({
+            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
+            to: adminEmails.join(","),
+            subject: `New Application: ${career.title} - ${application.applicantName}`,
+            html: emailWrapper(content),
+            // Optionally attach the resume directly if the file size isn't a concern:
+            attachments: [
+                {
+                    filename: application.resumeUrl.substring(application.resumeUrl.indexOf('-') + 1), // Optional clean up
+                    path: `uploads/${application.resumeUrl}`
+                }
+            ]
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to send career application email:", error);
+        throw error;
+    }
+};

@@ -14,6 +14,7 @@ import reviewRoutes from "./routes/review.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
 import captainRoutes from "./routes/captain.routes.js";
 import couponRoutes from "./routes/coupon.routes.js";
+import careerRoutes from "./routes/career.routes.js";
 import startCleanupJob from "./cron/cleanup.js";
 import { startLowStockAlertJob } from "./cron/lowStockAlert.js";
 
@@ -60,6 +61,7 @@ app.use("/api/review", reviewRoutes);
 app.use("/api/category", categoryRoutes);
 app.use("/api/captain", captainRoutes);
 app.use("/api/coupon", couponRoutes);
+app.use("/api/career", careerRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

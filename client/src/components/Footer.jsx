@@ -46,7 +46,7 @@ const Footer = () => {
             <p className="text-sm font-bold tracking-widest text-slate-800 dark:text-slate-200 mb-6">COMPANY</p>
             <ul className="flex flex-col gap-3 text-sm">
               <li><a href="#" className="hover:text-primary dark:hover:text-primary-dark transition-colors">About</a></li>
-              <li><a href="#" className="hover:text-primary dark:hover:text-primary-dark transition-colors">Careers 🚀</a></li>
+              <li><Link to="/careers" className="hover:text-primary dark:hover:text-primary-dark transition-colors">Careers 🚀</Link></li>
               <li><a href="#" className="hover:text-primary dark:hover:text-primary-dark transition-colors">Press</a></li>
               <li><a href="#" className="hover:text-primary dark:hover:text-primary-dark transition-colors">Blog</a></li>
               <li><a href="#" className="hover:text-primary dark:hover:text-primary-dark transition-colors">Partners</a></li>

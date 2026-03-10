@@ -35,6 +35,7 @@ const smtpSchema = new mongoose.Schema({
                 newOrder: { type: Boolean, default: true },  // new order placed
                 orderStatus: { type: Boolean, default: false },  // order status change
                 dailySummary: { type: Boolean, default: false },  // daily digest
+                careerApplication: { type: Boolean, default: true }, // new career application
             }
         }
     ],

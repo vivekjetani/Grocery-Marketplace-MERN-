@@ -35,6 +35,9 @@ import PageTransition from "./components/PageTransition";
 import CustomCursor from "./components/CustomCursor";
 import VerifyEmail from "./pages/VerifyEmail";
 import Coupons from "./pages/seller/Coupons";
+import AdminCareers from "./pages/seller/AdminCareers";
+import Careers from "./pages/Careers";
+import JobDetails from "./pages/JobDetails";
 
 const App = () => {
   const location = useLocation();
@@ -95,6 +98,8 @@ const App = () => {
             <Route path="/add-address" element={<PageTransition><Address /></PageTransition>} />
             <Route path="/verify-email" element={<PageTransition><VerifyEmail /></PageTransition>} />
             <Route path="/review" element={<PageTransition><ReviewFromEmail /></PageTransition>} />
+            <Route path="/careers" element={<PageTransition><Careers /></PageTransition>} />
+            <Route path="/careers/:id" element={<PageTransition><JobDetails /></PageTransition>} />
 
             <Route path="/profile" element={<PageTransition><ProfileLayout /></PageTransition>}>
               <Route index element={<ProfileInfo />} />
@@ -114,6 +119,7 @@ const App = () => {
               <Route path="captains" element={isSeller ? <Captains /> : null} />
               <Route path="users" element={isSeller ? <Users /> : null} />
               <Route path="users/:id" element={isSeller ? <UserDetails /> : null} />
+              <Route path="careers" element={isSeller ? <AdminCareers /> : null} />
               <Route path="coupons" element={isSeller ? <Coupons /> : null} />
               <Route path="smtp" element={isSeller ? <SmtpSettings /> : null} />
             </Route>
