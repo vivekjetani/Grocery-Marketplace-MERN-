@@ -36,6 +36,18 @@ const Orders = () => {
     }
   };
 
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case 'Delivered': return 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700';
+      case 'In Progress': return 'bg-purple-100 dark:bg-purple-900/30 text-purple-700';
+      case 'Rejected':
+      case 'Cancelled': return 'bg-red-100 dark:bg-red-900/30 text-red-700';
+      case 'Confirmed': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700';
+      case 'Out for Delivery': return 'bg-orange-100 dark:bg-orange-900/30 text-orange-700';
+      default: return 'bg-amber-100 dark:bg-amber-900/30 text-amber-700';
+    }
+  };
+
   return (
     <div className="md:p-10 p-4 max-w-6xl mx-auto space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -71,6 +83,7 @@ const Orders = () => {
             >
               {/* Order Header */}
               <div className="px-6 py-4 bg-slate-50/50 dark:bg-slate-700/30 border-b border-slate-100 dark:border-slate-700 flex flex-wrap items-center justify-between gap-4">
+                {/* Left: Order ID */}
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                     <Package size={20} />
@@ -80,6 +93,8 @@ const Orders = () => {
                     <p className="font-mono text-sm text-slate-700 dark:text-slate-300">#{order._id?.slice(-8).toUpperCase()}</p>
                   </div>
                 </div>
+
+                {/* Right: Date + Status badges */}
                 <div className="flex items-center gap-6">
                   <div className="flex flex-col items-end">
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 flex items-center gap-1">
@@ -89,9 +104,16 @@ const Orders = () => {
                       {new Date(order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </p>
                   </div>
-                  <div className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-2 ${order.isPaid ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700'}`}>
-                    {order.isPaid ? <CheckCircle size={14} /> : <Clock size={14} />}
-                    {order.isPaid ? "Paid" : "Pending"}
+                  <div className="flex items-center gap-2">
+                    {/* Delivery status badge */}
+                    <div className={`px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 ${getStatusStyle(order.status)}`}>
+                      {order.status === 'Delivered' ? <CheckCircle size={12} /> : <Clock size={12} />}
+                      {order.status || 'Order Placed'}
+                    </div>
+                    {/* Payment method pill */}
+                    <div className={`px-3 py-1 rounded-full text-xs font-bold ${order.isPaid ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600' : 'bg-slate-100 dark:bg-slate-700 text-slate-500'}`}>
+                      {order.isPaid ? 'Paid' : 'COD'}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -141,7 +163,7 @@ const Orders = () => {
                   </div>
                 </div>
 
-                {/* Summary */}
+                {/* Summary & Status Update */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 mb-2">
                     <CreditCard size={16} />
@@ -170,8 +192,10 @@ const Orders = () => {
                       >
                         <option value="Order Placed">Order Placed</option>
                         <option value="Confirmed">Confirmed</option>
+                        <option value="In Progress">In Progress</option>
                         <option value="Out for Delivery">Out for Delivery</option>
                         <option value="Delivered">Delivered</option>
+                        <option value="Rejected">Rejected</option>
                         <option value="Cancelled">Cancelled</option>
                       </select>
                     </div>
@@ -187,4 +211,3 @@ const Orders = () => {
 };
 
 export default Orders;
-

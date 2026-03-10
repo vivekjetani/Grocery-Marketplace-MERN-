@@ -9,6 +9,9 @@ import {
   getSmtpSettings,
   updateSmtpSettings,
   testSmtpConnection,
+  createCaptain,
+  getAllCaptains,
+  deleteCaptain,
 } from "../controller/seller.controller.js";
 import { authSeller } from "../middlewares/authSeller.js";
 const router = express.Router();
@@ -22,5 +25,9 @@ router.delete("/users/:id", authSeller, deleteUserForSeller);
 router.get("/smtp", authSeller, getSmtpSettings);
 router.put("/smtp", authSeller, updateSmtpSettings);
 router.post("/smtp/test", authSeller, testSmtpConnection);
+// Captain management
+router.post("/captain", authSeller, createCaptain);
+router.get("/captains", authSeller, getAllCaptains);
+router.delete("/captain/:id", authSeller, deleteCaptain);
 
 export default router;

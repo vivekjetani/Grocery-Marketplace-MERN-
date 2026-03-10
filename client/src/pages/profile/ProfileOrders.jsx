@@ -2,13 +2,14 @@ import { useContext, useEffect, useState } from "react";
 import { AppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, ArrowLeft, RefreshCw, Star, X } from "lucide-react";
+import { Package, RefreshCw, Star, X, KeyRound } from "lucide-react";
 import ReviewForm from "../../components/ReviewForm";
 
 const ProfileOrders = () => {
   const [myOrders, setMyOrders] = useState([]);
   const [reviewProductId, setReviewProductId] = useState(null);
   const { axios, user, navigate, cartItems, setCartItems } = useContext(AppContext);
+
   const fetchOrders = async () => {
     try {
       const { data } = await axios.get("/api/order/user");
@@ -64,6 +65,8 @@ const ProfileOrders = () => {
           {myOrders.map((order, index) => (
             <motion.div key={order._id || index} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}
               className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+
+              {/* Order Header */}
               <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700">
                 <div className="flex items-center gap-2">
                   <Package size={16} className="text-primary" />
@@ -84,6 +87,26 @@ const ProfileOrders = () => {
                   <span className="text-slate-900 dark:text-white text-base">₹{order.amount}</span>
                 </div>
               </div>
+
+              {/* Delivery OTP — shown only when captain is assigned & order is In Progress */}
+              {order.deliveryOtp && order.status === "In Progress" && (
+                <div className="px-6 py-3 bg-indigo-50 dark:bg-indigo-900/20 border-b border-indigo-100 dark:border-indigo-800/40 flex items-center gap-3">
+                  <KeyRound size={16} className="text-indigo-500 shrink-0" />
+                  <div className="flex-grow">
+                    <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                      Delivery OTP — Share with your captain
+                    </p>
+                    <p className="font-mono text-2xl font-black text-indigo-700 dark:text-indigo-300 tracking-[6px] mt-0.5">
+                      {order.deliveryOtp}
+                    </p>
+                  </div>
+                  <span className="text-xs bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-700 px-2 py-0.5 rounded-full font-bold">
+                    🚚 In Progress
+                  </span>
+                </div>
+              )}
+
+              {/* Order Items */}
               {order.items.map((item, itemIndex) => (
                 <div key={itemIndex} className={`flex flex-col md:flex-row md:items-center justify-between p-4 md:px-6 gap-4 ${order.items.length !== itemIndex + 1 ? "border-b border-slate-100 dark:border-slate-700" : ""}`}>
                   <div className="flex items-center gap-4">
@@ -96,8 +119,15 @@ const ProfileOrders = () => {
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-4 md:gap-6 text-sm">
-                    <div className="flex items-center gap-1"><span className="text-slate-500 dark:text-slate-400 font-medium">Qty:</span><span className="font-bold text-slate-900 dark:text-white">{item.quantity || "1"}</span></div>
-                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${order.status === "Delivered" ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" : order.status === "Cancelled" ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400" : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"}`}>{order.status}</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-slate-500 dark:text-slate-400 font-medium">Qty:</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{item.quantity || "1"}</span>
+                    </div>
+                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${order.status === "Delivered" ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                        : order.status === "Cancelled" || order.status === "Rejected" ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                          : order.status === "In Progress" ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400"
+                            : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+                      }`}>{order.status}</span>
                     <span className="text-slate-500 dark:text-slate-400 text-xs font-medium">{new Date(order.createdAt).toLocaleDateString()}</span>
                     <span className="font-black text-slate-900 dark:text-white text-base">₹{(item.product.offerPrice * item.quantity).toFixed(2)}</span>
                     <button
@@ -147,4 +177,5 @@ const ProfileOrders = () => {
     </motion.div>
   );
 };
+
 export default ProfileOrders;

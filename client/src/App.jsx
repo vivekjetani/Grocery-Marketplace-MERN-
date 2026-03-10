@@ -1,5 +1,6 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
+import { useState, useEffect, useContext } from "react";
 import Products from "./pages/Products";
 import SingleProduct from "./pages/SingleProduct";
 import Home from "./pages/Home";
@@ -8,6 +9,7 @@ import Navbar from "./components/Navbar";
 import { Toaster } from "react-hot-toast";
 import Footer from "./components/Footer";
 import { useAppContext } from "./context/AppContext";
+import { AppContext } from "./context/AppContext";
 import Auth from "./modals/Auth";
 import ProductCategory from "./pages/ProductCategory";
 import Address from "./pages/Address";
@@ -24,6 +26,11 @@ import CategoryManager from "./pages/seller/CategoryManager";
 import Users from "./pages/seller/Users";
 import UserDetails from "./pages/seller/UserDetails";
 import SmtpSettings from "./pages/seller/SmtpSettings";
+import Captains from "./pages/seller/Captains";
+import CaptainLogin from "./pages/captain/CaptainLogin";
+import CaptainLayout from "./pages/captain/CaptainLayout";
+import CaptainOrders from "./pages/captain/CaptainOrders";
+import ReviewFromEmail from "./pages/ReviewFromEmail";
 import PageTransition from "./components/PageTransition";
 import CustomCursor from "./components/CustomCursor";
 import VerifyEmail from "./pages/VerifyEmail";
@@ -31,7 +38,43 @@ import VerifyEmail from "./pages/VerifyEmail";
 const App = () => {
   const location = useLocation();
   const isSellerPath = location.pathname.includes("seller");
+  const isCaptainPath = location.pathname.startsWith("/captain");
   const { showUserLogin, isSeller } = useAppContext();
+  const { axios } = useContext(AppContext);
+
+  // Captain auth state (managed locally, not in global context)
+  const [captain, setCaptain] = useState(null);
+  const [captainChecked, setCaptainChecked] = useState(false);
+
+  useEffect(() => {
+    if (isCaptainPath) {
+      axios.get("/api/captain/is-auth").then(({ data }) => {
+        if (data.success) setCaptain(data.captain);
+        else setCaptain(null);
+      }).catch(() => setCaptain(null)).finally(() => setCaptainChecked(true));
+    } else {
+      setCaptainChecked(true);
+    }
+  }, [isCaptainPath]);
+
+  // Captain portal rendering
+  if (isCaptainPath) {
+    if (!captainChecked) {
+      return (
+        <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+          <div className="w-10 h-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      );
+    }
+    if (!captain) {
+      return <CaptainLogin onLogin={(c) => setCaptain(c)} />;
+    }
+    return (
+      <CaptainLayout captain={captain} onLogout={() => setCaptain(null)}>
+        <CaptainOrders />
+      </CaptainLayout>
+    );
+  }
 
   return (
     <div className="text-default min-h-screen flex flex-col overflow-x-hidden">
@@ -50,6 +93,8 @@ const App = () => {
             <Route path="/cart" element={<PageTransition><Cart /></PageTransition>} />
             <Route path="/add-address" element={<PageTransition><Address /></PageTransition>} />
             <Route path="/verify-email" element={<PageTransition><VerifyEmail /></PageTransition>} />
+            <Route path="/review" element={<PageTransition><ReviewFromEmail /></PageTransition>} />
+
             <Route path="/profile" element={<PageTransition><ProfileLayout /></PageTransition>}>
               <Route index element={<ProfileInfo />} />
               <Route path="info" element={<ProfileInfo />} />
@@ -61,12 +106,10 @@ const App = () => {
               element={isSeller ? <PageTransition><SellerLayout /></PageTransition> : <PageTransition><SellerLogin /></PageTransition>}
             >
               <Route index element={isSeller ? <AddProduct /> : null} />
-              <Route
-                path="product-list"
-                element={isSeller ? <ProductList /> : null}
-              />
+              <Route path="product-list" element={isSeller ? <ProductList /> : null} />
               <Route path="orders" element={isSeller ? <Orders /> : null} />
               <Route path="category-manager" element={isSeller ? <CategoryManager /> : null} />
+              <Route path="captains" element={isSeller ? <Captains /> : null} />
               <Route path="users" element={isSeller ? <Users /> : null} />
               <Route path="users/:id" element={isSeller ? <UserDetails /> : null} />
               <Route path="smtp" element={isSeller ? <SmtpSettings /> : null} />
@@ -79,3 +122,4 @@ const App = () => {
   );
 };
 export default App;
+

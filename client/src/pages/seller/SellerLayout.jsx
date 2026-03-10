@@ -12,10 +12,12 @@ const SellerLayout = () => {
     { name: "Add Product", path: "/seller", icon: assets.add_icon },
     { name: "Product List", path: "/seller/product-list", icon: assets.product_list_icon },
     { name: "Orders", path: "/seller/orders", icon: assets.order_icon },
-    { name: "Categories", path: "/seller/category-manager", icon: assets.add_icon }, // Using add_icon for now
+    { name: "Categories", path: "/seller/category-manager", icon: assets.add_icon },
+    { name: "Captains", path: "/seller/captains", icon: assets.order_icon },
     { name: "Users", path: "/seller/users", icon: assets.profile_icon },
-    { name: "SMTP Settings", path: "/seller/smtp", icon: assets.order_icon }, // Reusing order_icon for now
+    { name: "SMTP Settings", path: "/seller/smtp", icon: assets.order_icon },
   ];
+
 
   const logout = async () => {
     try {

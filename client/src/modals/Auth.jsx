@@ -8,24 +8,18 @@ const Auth = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { setShowUserLogin, setUser, axios, navigate } = useAppContext();
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (isSubmitting) return;
-
-    setIsSubmitting(true);
-    const toastId = toast.loading("Processing...");
-
     try {
+      e.preventDefault();
       const { data } = await axios.post(`/api/user/${state}`, {
         name,
         email,
         password,
       });
       if (data.success) {
-        toast.success(data.message, { id: toastId });
+        toast.success(data.message);
         if (state === "login") {
           setUser(data.user);
           setShowUserLogin(false);
@@ -34,12 +28,10 @@ const Auth = () => {
           setState("login");
         }
       } else {
-        toast.error(data.message, { id: toastId });
+        toast.error(data.message);
       }
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Something went wrong.", { id: toastId });
-    } finally {
-      setIsSubmitting(false);
+      toast.error(error?.response?.data?.message || "Something went wrong.");
     }
   };
 
@@ -142,13 +134,12 @@ const Auth = () => {
             </div>
 
             <motion.button
-              disabled={isSubmitting}
-              whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
-              whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
-              className={`w-full mt-8 py-4 bg-gradient-to-r from-primary to-accent text-white font-bold text-lg rounded-xl shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all flex items-center justify-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full mt-8 py-4 bg-gradient-to-r from-primary to-accent text-white font-bold text-lg rounded-xl shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all flex items-center justify-center gap-2"
             >
-              {isSubmitting ? "Processing..." : state === "register" ? "Create Account" : "Let's Go"}
-              {!isSubmitting && <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>}
+              {state === "register" ? "Create Account" : "Let's Go"}
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
             </motion.button>
 
             <div className="mt-6 text-center">

@@ -1,8 +1,18 @@
 import Order from "../models/order.model.js";
 import Product from "../models/product.model.js";
+import Captain from "../models/captain.model.js";
+import Address from "../models/address.model.js";
 
-import { sendOrderConfirmationEmail, sendOrderAdminNotification, sendOrderStatusUpdateEmail } from "../services/email.service.js";
+import {
+  sendOrderConfirmationEmail,
+  sendOrderAdminNotification,
+  sendOrderStatusUpdateEmail,
+  sendCaptainOrderNotification,
+} from "../services/email.service.js";
 import User from "../models/user.model.js";
+
+// Helper: generate 6-digit OTP
+const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 
 // Place order COD: /api/order/place
 export const placeOrderCOD = async (req, res) => {
@@ -20,8 +30,12 @@ export const placeOrderCOD = async (req, res) => {
       return (await acc) + product.offerPrice * item.quantity;
     }, 0);
 
-    // Add tex charfe 2%
+    // Add tax charge 2%
     amount += Math.floor((amount * 2) / 100);
+
+    // Generate delivery OTP
+    const deliveryOtp = generateOtp();
+
     const newOrder = await Order.create({
       userId,
       items,
@@ -29,6 +43,7 @@ export const placeOrderCOD = async (req, res) => {
       amount,
       paymentType: "COD",
       isPaid: false,
+      deliveryOtp,
     });
 
     // Increment orderCount for each product
@@ -36,11 +51,13 @@ export const placeOrderCOD = async (req, res) => {
       await Product.findByIdAndUpdate(item.product, { $inc: { orderCount: 1 } });
     }
 
-    // Send emails asynchronously (don't await)
+    // Assign a random free captain (async)
     (async () => {
       try {
         const user = await User.findById(userId);
-        // Fetch populated order for email
+        const addressDoc = await Address.findById(address);
+
+        // Fetch populated order for emails
         const populatedOrder = await Order.findById(newOrder._id).populate("items.product");
 
         const orderDataForEmail = {
@@ -53,12 +70,28 @@ export const placeOrderCOD = async (req, res) => {
           }))
         };
 
+        // Send customer confirmation and admin notification
         if (user) {
           sendOrderConfirmationEmail(user, orderDataForEmail);
           sendOrderAdminNotification(user, orderDataForEmail);
         }
-      } catch (emailError) {
-        console.error("Failed to send order emails on COD completion:", emailError);
+
+        // Find a random free & active captain
+        const freeCaptains = await Captain.find({ isActive: true, isBusy: false });
+        if (freeCaptains.length > 0) {
+          const randomCaptain = freeCaptains[Math.floor(Math.random() * freeCaptains.length)];
+
+          // Assign captain to order
+          await Order.findByIdAndUpdate(newOrder._id, { captainId: randomCaptain._id });
+
+          // Notify captain by email
+          if (user && addressDoc) {
+            sendCaptainOrderNotification(randomCaptain, orderDataForEmail, user, addressDoc);
+          }
+        }
+        // If no free captain → order stays unassigned (captainId = null, captainStatus = "Pending")
+      } catch (err) {
+        console.error("Failed to assign captain or send emails:", err);
       }
     })();
 
@@ -66,6 +99,7 @@ export const placeOrderCOD = async (req, res) => {
       .status(201)
       .json({ message: "Order placed successfully", success: true });
   } catch (error) {
+    console.error("Error placing order:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -76,7 +110,7 @@ export const updateOrderStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    const validStatuses = ['Order Placed', 'Confirmed', 'Out for Delivery', 'Delivered', 'Cancelled'];
+    const validStatuses = ['Order Placed', 'Confirmed', 'In Progress', 'Out for Delivery', 'Delivered', 'Cancelled', 'Rejected'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ message: "Invalid status", success: false });
     }

@@ -1,10 +1,12 @@
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 import User from "../models/user.model.js";
 import Order from "../models/order.model.js";
 import Review from "../models/review.model.js";
 import Address from "../models/address.model.js";
 import Smtp from "../models/smtp.model.js";
-import { sendTestEmail } from "../services/email.service.js";
+import Captain from "../models/captain.model.js";
+import { sendTestEmail, sendCaptainWelcomeEmail } from "../services/email.service.js";
 import mongoose from "mongoose";
 // seller login :/api/seller/login
 export const sellerLogin = async (req, res) => {
@@ -226,5 +228,75 @@ export const testSmtpConnection = async (req, res) => {
   } catch (error) {
     console.error("Error in testSmtpConnection:", error);
     res.status(500).json({ message: "Failed to send test email. Check your SMTP settings.", error: error.message, success: false });
+  }
+};
+
+// ==== CAPTAIN MANAGEMENT ====
+
+// Create Captain: POST /api/seller/captain
+export const createCaptain = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    if (!name || !email) {
+      return res.status(400).json({ message: "Name and email are required", success: false });
+    }
+
+    const existing = await Captain.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ message: "A captain with this email already exists", success: false });
+    }
+
+    // Use provided password or auto-generate a random one
+    const plainPassword = password || Math.random().toString(36).slice(-8) + "@Cpt1";
+    const hashedPassword = await bcrypt.hash(plainPassword, 10);
+
+    const captain = await Captain.create({ name, email, password: hashedPassword });
+
+    // Send welcome email with credentials (async)
+    (async () => {
+      try {
+        await sendCaptainWelcomeEmail(captain, plainPassword);
+      } catch (emailError) {
+        console.error("Failed to send captain welcome email:", emailError);
+      }
+    })();
+
+    res.status(201).json({
+      message: "Captain created and welcome email sent",
+      success: true,
+      captain: { _id: captain._id, name: captain.name, email: captain.email, isActive: captain.isActive, isBusy: captain.isBusy },
+    });
+  } catch (error) {
+    console.error("Error in createCaptain:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Get All Captains: GET /api/seller/captains
+export const getAllCaptains = async (req, res) => {
+  try {
+    const captains = await Captain.find().select("-password").sort({ createdAt: -1 });
+    res.status(200).json({ success: true, captains });
+  } catch (error) {
+    console.error("Error in getAllCaptains:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Delete Captain: DELETE /api/seller/captain/:id
+export const deleteCaptain = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid captain ID", success: false });
+    }
+    const captain = await Captain.findByIdAndDelete(id);
+    if (!captain) {
+      return res.status(404).json({ message: "Captain not found", success: false });
+    }
+    res.status(200).json({ message: "Captain deleted successfully", success: true });
+  } catch (error) {
+    console.error("Error in deleteCaptain:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
