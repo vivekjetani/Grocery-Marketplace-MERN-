@@ -17,12 +17,7 @@ export const subscribe = async (req, res) => {
             return res.status(400).json({ success: false, message: "Email is required" });
         }
 
-        // Check if the email belongs to a registered user
-        const existingUser = await User.findOne({ email });
-        if (!existingUser) {
-            return res.status(404).json({ success: false, message: "Only registered users can subscribe to the newsletter. Please create an account first." });
-        }
-
+        // Check if the email is already in the list
         const existingSubscriber = await Newsletter.findOne({ email });
         if (existingSubscriber) {
             return res.status(400).json({ success: false, message: "Email is already in the list" });
