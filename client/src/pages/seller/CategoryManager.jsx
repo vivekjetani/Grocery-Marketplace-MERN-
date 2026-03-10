@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
-import { Plus, Trash2, FolderPlus, Edit2, ChevronDown, ChevronUp, PackageOpen, CheckSquare, Square, CornerUpRight, GripVertical } from "lucide-react";
+import { Plus, Trash2, FolderPlus, Edit2, ChevronDown, ChevronUp, PackageOpen, CheckSquare, Square, CornerUpRight, GripVertical, Search, X } from "lucide-react";
 
 const CategoryManager = () => {
     const { axios, categories, fetchCategories, products, fetchProducts } = useAppContext();
@@ -29,6 +29,7 @@ const CategoryManager = () => {
     // Drag and Drop states
     const [draggedCategoryIdx, setDraggedCategoryIdx] = useState(null);
     const [dragOverCategoryIdx, setDragOverCategoryIdx] = useState(null);
+    const [categorySearch, setCategorySearch] = useState("");
 
     useEffect(() => {
         if (fetchProducts && products.length === 0) {
@@ -356,163 +357,185 @@ const CategoryManager = () => {
 
                 {/* Category List */}
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-                        <h3 className="font-semibold text-slate-900 dark:text-white">Active Categories</h3>
+                    <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between gap-3">
+                        <h3 className="font-semibold text-slate-900 dark:text-white shrink-0">Active Categories</h3>
+                        <div className="relative w-full max-w-xs">
+                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            <input
+                                type="text"
+                                value={categorySearch}
+                                onChange={(e) => setCategorySearch(e.target.value)}
+                                placeholder="Search categories…"
+                                className="pl-8 pr-7 py-1.5 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                            />
+                            {categorySearch && (
+                                <button onClick={() => setCategorySearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                                    <X size={12} />
+                                </button>
+                            )}
+                        </div>
                     </div>
                     <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {categories.length === 0 ? (
-                            <div className="p-8 text-center text-slate-500">No categories found. Add your first category above!</div>
+                        {categories.filter(c =>
+                            !categorySearch.trim() ||
+                            c.text?.toLowerCase().includes(categorySearch.toLowerCase())
+                        ).length === 0 ? (
+                            <div className="p-8 text-center text-slate-500">{categorySearch ? 'No categories match your search.' : 'No categories found. Add your first category above!'}</div>
                         ) : (
-                            categories.map((category, idx) => {
-                                const categoryProducts = getProductsForCategory(category.text);
-                                const isExpanded = expandedCategory === category.text;
+                            categories
+                                .filter(c =>
+                                    !categorySearch.trim() ||
+                                    c.text?.toLowerCase().includes(categorySearch.toLowerCase())
+                                ).map((category, idx) => {
+                                    const categoryProducts = getProductsForCategory(category.text);
+                                    const isExpanded = expandedCategory === category.text;
 
-                                return (
-                                    <div
-                                        key={category._id || idx}
-                                        className={`flex flex-col border-b border-slate-100 dark:border-slate-800 last:border-0 transition-all ${dragOverCategoryIdx === idx ? (dragOverCategoryIdx > draggedCategoryIdx ? 'border-b-2 border-b-indigo-500' : 'border-t-2 border-t-indigo-500') : ''} ${draggedCategoryIdx === idx ? 'bg-slate-50 dark:bg-slate-800/50' : ''}`}
-                                        draggable
-                                        onDragStart={(e) => handleDragStart(e, idx)}
-                                        onDragEnter={(e) => handleDragEnter(e, idx)}
-                                        onDragEnd={handleDragEnd}
-                                        onDragOver={handleDragOver}
-                                    >
-                                        {/* Category Header */}
+                                    return (
                                         <div
-                                            className={`px-6 py-4 flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors cursor-pointer ${isExpanded ? 'bg-slate-50 dark:bg-slate-800/30' : ''}`}
-                                            onClick={() => toggleCategory(category.text)}
+                                            key={category._id || idx}
+                                            className={`flex flex-col border-b border-slate-100 dark:border-slate-800 last:border-0 transition-all ${dragOverCategoryIdx === idx ? (dragOverCategoryIdx > draggedCategoryIdx ? 'border-b-2 border-b-indigo-500' : 'border-t-2 border-t-indigo-500') : ''} ${draggedCategoryIdx === idx ? 'bg-slate-50 dark:bg-slate-800/50' : ''}`}
+                                            draggable
+                                            onDragStart={(e) => handleDragStart(e, idx)}
+                                            onDragEnter={(e) => handleDragEnter(e, idx)}
+                                            onDragEnd={handleDragEnd}
+                                            onDragOver={handleDragOver}
                                         >
-                                            <div className="flex items-center gap-4">
-                                                <div className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-indigo-500 p-1 -ml-2" title="Drag to reorder" onClick={e => e.stopPropagation()}>
-                                                    <GripVertical size={20} />
-                                                </div>
-                                                {category.image && (
-                                                    <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-lg p-1 border border-slate-200 dark:border-slate-700 flex-shrink-0">
-                                                        <img
-                                                            src={category.image}
-                                                            alt={category.text}
-                                                            className="w-full h-full object-contain"
-                                                        />
+                                            {/* Category Header */}
+                                            <div
+                                                className={`px-6 py-4 flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors cursor-pointer ${isExpanded ? 'bg-slate-50 dark:bg-slate-800/30' : ''}`}
+                                                onClick={() => toggleCategory(category.text)}
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-indigo-500 p-1 -ml-2" title="Drag to reorder" onClick={e => e.stopPropagation()}>
+                                                        <GripVertical size={20} />
                                                     </div>
-                                                )}
-                                                <div>
-                                                    <span className="text-slate-700 dark:text-slate-300 font-medium text-lg flex items-center gap-2">
-                                                        {category.text}
-                                                    </span>
-                                                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1 mt-0.5">
-                                                        <PackageOpen size={14} /> {categoryProducts.length} Products
-                                                    </span>
+                                                    {category.image && (
+                                                        <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-lg p-1 border border-slate-200 dark:border-slate-700 flex-shrink-0">
+                                                            <img
+                                                                src={category.image}
+                                                                alt={category.text}
+                                                                className="w-full h-full object-contain"
+                                                            />
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <span className="text-slate-700 dark:text-slate-300 font-medium text-lg flex items-center gap-2">
+                                                            {category.text}
+                                                        </span>
+                                                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1 mt-0.5">
+                                                            <PackageOpen size={14} /> {categoryProducts.length} Products
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    {/* Actions only appear on hover, click to stop propagation */}
+                                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity mr-2" onClick={(e) => e.stopPropagation()}>
+                                                        <button
+                                                            onClick={(e) => moveCategory(e, idx, 'up')}
+                                                            disabled={idx === 0}
+                                                            className="p-1.5 text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent"
+                                                            title="Move Up"
+                                                        >
+                                                            <ChevronUp size={18} />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => moveCategory(e, idx, 'down')}
+                                                            disabled={idx === categories.length - 1}
+                                                            className="p-1.5 text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent"
+                                                            title="Move Down"
+                                                        >
+                                                            <ChevronDown size={18} />
+                                                        </button>
+                                                        <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1"></div>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleOpenRename(category); }}
+                                                            className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 rounded-lg transition-all"
+                                                            title="Rename Category"
+                                                        >
+                                                            <Edit2 size={20} />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleDelete(category._id, category.text); }}
+                                                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-all"
+                                                            title="Delete Category"
+                                                        >
+                                                            <Trash2 size={20} />
+                                                        </button>
+                                                    </div>
+                                                    <div className="text-slate-400">
+                                                        {isExpanded ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                {/* Actions only appear on hover, click to stop propagation */}
-                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity mr-2" onClick={(e) => e.stopPropagation()}>
-                                                    <button
-                                                        onClick={(e) => moveCategory(e, idx, 'up')}
-                                                        disabled={idx === 0}
-                                                        className="p-1.5 text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent"
-                                                        title="Move Up"
-                                                    >
-                                                        <ChevronUp size={18} />
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => moveCategory(e, idx, 'down')}
-                                                        disabled={idx === categories.length - 1}
-                                                        className="p-1.5 text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent"
-                                                        title="Move Down"
-                                                    >
-                                                        <ChevronDown size={18} />
-                                                    </button>
-                                                    <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1"></div>
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); handleOpenRename(category); }}
-                                                        className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 rounded-lg transition-all"
-                                                        title="Rename Category"
-                                                    >
-                                                        <Edit2 size={20} />
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); handleDelete(category._id, category.text); }}
-                                                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-all"
-                                                        title="Delete Category"
-                                                    >
-                                                        <Trash2 size={20} />
-                                                    </button>
-                                                </div>
-                                                <div className="text-slate-400">
-                                                    {isExpanded ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
-                                                </div>
-                                            </div>
-                                        </div>
 
-                                        {/* Products Accordion Content */}
-                                        {isExpanded && (
-                                            <div className="bg-slate-50/50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 py-3 px-6 animate-in slide-in-from-top-2 duration-200">
-                                                {categoryProducts.length === 0 ? (
-                                                    <div className="text-center py-6 text-slate-500 dark:text-slate-400 text-sm italic">
-                                                        No products in this category.
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex flex-col gap-3 relative">
-                                                        {/* Accordion Actions Row */}
-                                                        <div className="flex items-center justify-between bg-white dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 mb-2">
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); selectAllInCategory(categoryProducts); }}
-                                                                className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                                                            >
-                                                                {selectedProducts.length === categoryProducts.length ? <CheckSquare size={18} className="text-indigo-600" /> : <Square size={18} />}
-                                                                Select All
-                                                            </button>
-
-                                                            {selectedProducts.length > 0 && (
+                                            {/* Products Accordion Content */}
+                                            {isExpanded && (
+                                                <div className="bg-slate-50/50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 py-3 px-6 animate-in slide-in-from-top-2 duration-200">
+                                                    {categoryProducts.length === 0 ? (
+                                                        <div className="text-center py-6 text-slate-500 dark:text-slate-400 text-sm italic">
+                                                            No products in this category.
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex flex-col gap-3 relative">
+                                                            {/* Accordion Actions Row */}
+                                                            <div className="flex items-center justify-between bg-white dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 mb-2">
                                                                 <button
-                                                                    onClick={() => { setTransferCategoryName(category.text); setShowTransferModal(true); }}
-                                                                    className="flex items-center gap-2 text-sm font-medium bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
+                                                                    onClick={(e) => { e.stopPropagation(); selectAllInCategory(categoryProducts); }}
+                                                                    className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                                                                 >
-                                                                    <CornerUpRight size={16} />
-                                                                    Transfer Selected ({selectedProducts.length})
+                                                                    {selectedProducts.length === categoryProducts.length ? <CheckSquare size={18} className="text-indigo-600" /> : <Square size={18} />}
+                                                                    Select All
                                                                 </button>
-                                                            )}
-                                                        </div>
 
-                                                        {/* Product List */}
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-2 sm:pl-6 border-l-2 border-slate-200 dark:border-slate-700">
-                                                            {categoryProducts.map((product) => {
-                                                                const isSelected = selectedProducts.includes(product._id);
-                                                                return (
-                                                                    <div
-                                                                        key={product._id}
-                                                                        onClick={() => toggleProductSelection(product._id)}
-                                                                        className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${isSelected ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/20 dark:border-indigo-500' : 'border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600 bg-white dark:bg-slate-800/80'} shadow-sm`}
+                                                                {selectedProducts.length > 0 && (
+                                                                    <button
+                                                                        onClick={() => { setTransferCategoryName(category.text); setShowTransferModal(true); }}
+                                                                        className="flex items-center gap-2 text-sm font-medium bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
                                                                     >
-                                                                        <div className="flex items-center gap-3">
-                                                                            <div className="flex-shrink-0">
-                                                                                {isSelected ? <CheckSquare size={18} className="text-indigo-600" /> : <Square size={18} className="text-slate-400" />}
-                                                                            </div>
-                                                                            <img src={`${import.meta.env.VITE_BACKEND_URL}/images/${product.image[0]}`} alt={product.name} className="w-10 h-10 object-contain rounded-md bg-white border border-slate-100 dark:border-slate-700" />
-                                                                            <div>
-                                                                                <p className="font-medium text-sm text-slate-800 dark:text-slate-200 truncate max-w-[120px] sm:max-w-[180px]">{product.name}</p>
-                                                                                <p className="text-xs text-slate-500">${product.price}</p>
-                                                                            </div>
-                                                                        </div>
-                                                                        <button
-                                                                            onClick={(e) => { e.stopPropagation(); handleDeleteProduct(product._id); }}
-                                                                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                                                            title="Delete Product"
+                                                                        <CornerUpRight size={16} />
+                                                                        Transfer Selected ({selectedProducts.length})
+                                                                    </button>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Product List */}
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-2 sm:pl-6 border-l-2 border-slate-200 dark:border-slate-700">
+                                                                {categoryProducts.map((product) => {
+                                                                    const isSelected = selectedProducts.includes(product._id);
+                                                                    return (
+                                                                        <div
+                                                                            key={product._id}
+                                                                            onClick={() => toggleProductSelection(product._id)}
+                                                                            className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${isSelected ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/20 dark:border-indigo-500' : 'border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600 bg-white dark:bg-slate-800/80'} shadow-sm`}
                                                                         >
-                                                                            <Trash2 size={16} />
-                                                                        </button>
-                                                                    </div>
-                                                                );
-                                                            })}
+                                                                            <div className="flex items-center gap-3">
+                                                                                <div className="flex-shrink-0">
+                                                                                    {isSelected ? <CheckSquare size={18} className="text-indigo-600" /> : <Square size={18} className="text-slate-400" />}
+                                                                                </div>
+                                                                                <img src={`${import.meta.env.VITE_BACKEND_URL}/images/${product.image[0]}`} alt={product.name} className="w-10 h-10 object-contain rounded-md bg-white border border-slate-100 dark:border-slate-700" />
+                                                                                <div>
+                                                                                    <p className="font-medium text-sm text-slate-800 dark:text-slate-200 truncate max-w-[120px] sm:max-w-[180px]">{product.name}</p>
+                                                                                    <p className="text-xs text-slate-500">${product.price}</p>
+                                                                                </div>
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={(e) => { e.stopPropagation(); handleDeleteProduct(product._id); }}
+                                                                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                                                                title="Delete Product"
+                                                                            >
+                                                                                <Trash2 size={16} />
+                                                                            </button>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })
                         )}
                     </div>
                 </div>

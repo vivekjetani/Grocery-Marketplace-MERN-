@@ -2,12 +2,13 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { useAppContext } from "../../context/AppContext";
 import ProductAnalytics from "../../components/ProductAnalytics";
-import { BarChart2, Trash2, CornerUpRight, Package } from "lucide-react";
+import { BarChart2, Trash2, CornerUpRight, Package, Search, X } from "lucide-react";
 
 const ProductList = () => {
   const { products, fetchProducts, axios, categories } = useAppContext();
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [deleteProductId, setDeleteProductId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Transfer state
   const [transferProduct, setTransferProduct] = useState(null);
@@ -112,8 +113,12 @@ const ProductList = () => {
     return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">OK</span>;
   };
 
-  // Group products by category
-  const groupedProducts = products.reduce((acc, product) => {
+  // Group products by category, filtered by search
+  const filteredProducts = searchQuery.trim()
+    ? products.filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : products;
+
+  const groupedProducts = filteredProducts.reduce((acc, product) => {
     const cat = product.category || "Uncategorized";
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(product);
@@ -123,7 +128,24 @@ const ProductList = () => {
   return (
     <div className="flex-1 py-10 flex flex-col justify-between">
       <div className="w-full md:p-10 p-4">
-        <h2 className="pb-4 text-2xl font-bold text-slate-900 dark:text-white">Inventory Overview</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Inventory Overview</h2>
+          <div className="relative">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search products…"
+              className="pl-9 pr-8 py-2 w-full sm:w-60 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        </div>
 
         {Object.keys(groupedProducts).length === 0 ? (
           <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
