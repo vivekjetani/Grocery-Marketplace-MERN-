@@ -9,6 +9,7 @@ import Navbar from "./components/Navbar";
 import { Toaster } from "react-hot-toast";
 import Footer from "./components/Footer";
 import { useAppContext, AppContext } from "./context/AppContext";
+import ScrollToTop from "./components/ScrollToTop";
 import Auth from "./modals/Auth";
 import ProductCategory from "./pages/ProductCategory";
 import Address from "./pages/Address";
@@ -91,6 +92,7 @@ const App = () => {
 
   return (
     <div className="text-default min-h-screen flex flex-col overflow-x-hidden">
+      <ScrollToTop />
       {isSellerPath ? null : <Navbar />}
       {showUserLogin ? <Auth /> : null}
       <Toaster />
