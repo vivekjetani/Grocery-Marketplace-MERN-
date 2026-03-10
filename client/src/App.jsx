@@ -48,6 +48,7 @@ import Cancellation from "./pages/Cancellation";
 import ContactUs from "./pages/ContactUs";
 import Unsubscribe from "./pages/Unsubscribe";
 import Newsletter from "./pages/seller/Newsletter";
+import ResetPassword from "./pages/ResetPassword";
 
 const App = () => {
   const location = useLocation();
@@ -117,6 +118,7 @@ const App = () => {
             <Route path="/cancellation" element={<PageTransition><Cancellation /></PageTransition>} />
             <Route path="/contact-us" element={<PageTransition><ContactUs /></PageTransition>} />
             <Route path="/unsubscribe" element={<PageTransition><Unsubscribe /></PageTransition>} />
+            <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
 
             <Route path="/profile" element={<PageTransition><ProfileLayout /></PageTransition>}>
               <Route index element={<ProfileInfo />} />

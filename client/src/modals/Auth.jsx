@@ -8,11 +8,24 @@ const Auth = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { setShowUserLogin, setUser, axios, navigate, setAppliedCoupon } = useAppContext();
 
   const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
     try {
-      e.preventDefault();
+      if (state === "forgot-password") {
+        const { data } = await axios.post("/api/user/forgot-password", { email });
+        if (data.success) {
+          toast.success(data.message);
+          setState("login");
+        } else {
+          toast.error(data.message);
+        }
+        return;
+      }
+
       const { data } = await axios.post(`/api/user/${state}`, {
         name,
         email,
@@ -33,11 +46,31 @@ const Auth = () => {
       }
     } catch (error) {
       toast.error(error?.response?.data?.message || "Something went wrong.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const inputClass = "w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-xl px-4 py-3 outline-none transition-all dark:text-white dark:placeholder-slate-500 font-medium";
   const labelClass = "text-sm font-bold text-slate-700 dark:text-slate-300 ml-1 mb-1 block";
+
+  const getTitle = () => {
+    if (state === "login") return "Welcome back!";
+    if (state === "register") return "Join the squad";
+    return "Forgot Password?";
+  };
+
+  const getSubtitle = () => {
+    if (state === "login") return "Enter your details to access your account.";
+    if (state === "register") return "Create an account to get started.";
+    return "No worries, we'll send you reset instructions.";
+  };
+
+  const getIcon = () => {
+    if (state === "login") return "👋";
+    if (state === "register") return "✨";
+    return "🔒";
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
@@ -77,14 +110,14 @@ const Auth = () => {
 
           <div className="px-8 pt-8 pb-10">
             <div className="-mt-16 w-20 h-20 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex items-center justify-center mb-6 relative z-10">
-              <span className="text-4xl">{state === "login" ? "👋" : "✨"}</span>
+              <span className="text-4xl">{getIcon()}</span>
             </div>
 
             <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-2 tracking-tight">
-              {state === "login" ? "Welcome back!" : "Join the squad"}
+              {getTitle()}
             </h2>
             <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">
-              {state === "login" ? "Enter your details to access your account." : "Create an account to get started."}
+              {getSubtitle()}
             </p>
 
             <div className="space-y-4">
@@ -121,26 +154,53 @@ const Auth = () => {
                 />
               </div>
 
-              <div>
-                <label className={labelClass}>Password</label>
-                <input
-                  onChange={(e) => setPassword(e.target.value)}
-                  value={password}
-                  placeholder="••••••••"
-                  className={inputClass}
-                  type="password"
-                  required
-                />
-              </div>
+              <AnimatePresence mode="popLayout">
+                {state !== "forgot-password" && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <label className={labelClass}>Password</label>
+                      {state === "login" && (
+                        <button
+                          type="button"
+                          onClick={() => setState("forgot-password")}
+                          className="text-xs font-bold text-primary hover:underline transition-all"
+                        >
+                          Forgot?
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      onChange={(e) => setPassword(e.target.value)}
+                      value={password}
+                      placeholder="••••••••"
+                      className={inputClass}
+                      type="password"
+                      required
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full mt-8 py-4 bg-gradient-to-r from-primary to-accent text-white font-bold text-lg rounded-xl shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all flex items-center justify-center gap-2"
+              disabled={isSubmitting}
+              className="w-full mt-8 py-4 bg-gradient-to-r from-primary to-accent text-white font-bold text-lg rounded-xl shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              {state === "register" ? "Create Account" : "Let's Go"}
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+              {isSubmitting ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  {state === "register" ? "Create Account" : state === "login" ? "Let's Go" : "Send Reset Link"}
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </>
+              )}
             </motion.button>
 
             <div className="mt-6 text-center">
@@ -155,7 +215,7 @@ const Auth = () => {
                     Log in
                   </button>
                 </p>
-              ) : (
+              ) : state === "login" ? (
                 <p className="text-slate-600 dark:text-slate-400 font-medium text-sm">
                   New here?{" "}
                   <button
@@ -166,6 +226,14 @@ const Auth = () => {
                     Create an account
                   </button>
                 </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setState("login")}
+                  className="text-primary font-bold hover:underline text-sm"
+                >
+                  Back to Login
+                </button>
               )}
             </div>
           </div>

@@ -691,3 +691,34 @@ export const sendUserContactConfirmationEmail = async (userEmail, userName) => {
     }
 };
 
+// Send Reset Password Email
+export const sendResetPasswordEmail = async (toEmail, name, resetToken, expiresMinutes) => {
+    try {
+        const transporter = await createTransporter();
+        const smtpSettings = await Smtp.findOne();
+
+        const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+        const content = `
+          <h2>Password Reset Request</h2>
+          <p>Hello ${name},</p>
+          <p>We received a request to reset your password. This link will expire in <strong>${expiresMinutes} minutes</strong>.</p>
+          <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}" class="btn" style="padding: 12px 24px; font-size: 16px;">Reset My Password</a>
+          </div>
+          <p style="font-size: 14px; color: #666;">If the button doesn't work, copy and paste this link into your browser:</p>
+          <p style="font-size: 14px; word-break: break-all; color: #4CAF50;">${resetUrl}</p>
+          <p style="margin-top: 30px;">If you didn't request a password reset, you can safely ignore this email.</p>
+      `;
+
+        await transporter.sendMail({
+            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
+            to: toEmail,
+            subject: "Reset Your Password",
+            html: emailWrapper(content),
+        });
+    } catch (error) {
+        console.error("Failed to send reset password email:", error);
+    }
+};
+
