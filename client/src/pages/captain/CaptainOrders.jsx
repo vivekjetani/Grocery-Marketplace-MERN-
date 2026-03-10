@@ -21,7 +21,7 @@ const statusConfig = {
 };
 
 const CaptainOrders = () => {
-    const { axios } = useContext(AppContext);
+    const { axios, getImageUrl } = useContext(AppContext);
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [otpInputs, setOtpInputs] = useState({});
@@ -193,7 +193,7 @@ const CaptainOrders = () => {
                                                     >
                                                         {item.product?.image?.[0] && (
                                                             <img
-                                                                src={`${import.meta.env.VITE_BACKEND_URL}/images/${item.product.image[0]}`}
+                                                                src={getImageUrl(item.product.image[0])}
                                                                 alt={item.product.name}
                                                                 className="w-10 h-10 rounded-lg object-cover border border-slate-700"
                                                             />

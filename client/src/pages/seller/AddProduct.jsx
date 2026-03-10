@@ -14,6 +14,7 @@ const AddProduct = () => {
   const [offerPrice, setOfferPrice] = useState("");
   const [unit, setUnit] = useState("kg");
   const [stockQuantity, setStockQuantity] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   const handleFileChange = (index, fileList) => {
     if (!fileList || fileList.length === 0) return;
@@ -50,6 +51,7 @@ const AddProduct = () => {
         formData.append("image", validFiles[i]);
       }
 
+      setLoading(true);
       const { data } = await axios.post("/api/product/add-product", formData);
       if (data.success) {
         toast.success(data.message);
@@ -65,6 +67,7 @@ const AddProduct = () => {
       }
       else toast.error(data.message);
     } catch (error) { toast.error(error.message); }
+    finally { setLoading(false); }
   };
 
   return (
@@ -156,7 +159,17 @@ const AddProduct = () => {
           />
           <p className="text-[10px] text-slate-400">How many units are currently in stock.</p>
         </div>
-        <button className="px-8 py-2.5 bg-indigo-500 text-white font-medium rounded hover:bg-indigo-600 transition-colors">ADD</button>
+        <button
+          disabled={loading}
+          className="px-8 py-2.5 bg-indigo-500 text-white font-medium rounded hover:bg-indigo-600 transition-colors disabled:bg-slate-300 dark:disabled:bg-slate-700 flex items-center gap-2"
+        >
+          {loading ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              ADDING...
+            </>
+          ) : "ADD"}
+        </button>
       </form>
     </div>
   );

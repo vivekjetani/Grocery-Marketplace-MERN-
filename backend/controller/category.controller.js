@@ -2,13 +2,26 @@ import Category from "../models/category.model.js";
 import Product from "../models/product.model.js";
 import fs from "fs";
 import path from "path";
+import { uploadBufferToCloudinary, deleteFromCloudinary, publicIdFromUrl } from "../utils/cloudinaryUpload.js";
+
+// ──────────────────────────────────────────────────────────
+// HELPER: notify admins of cloudinary error
+// ──────────────────────────────────────────────────────────
+const notifyCloudinaryError = async (context, error) => {
+    try {
+        const { sendCloudinaryErrorEmail } = await import("../services/email.service.js");
+        await sendCloudinaryErrorEmail(context, error.message || String(error));
+    } catch (e) {
+        console.error("Failed to send Cloudinary error notification:", e);
+    }
+};
 
 export const addCategory = async (req, res) => {
     try {
         const { name, bgColor } = req.body;
-        const image = req.file?.filename;
+        const imageFile = req.file;
 
-        if (!name || !image) {
+        if (!name || !imageFile) {
             return res.status(400).json({ success: false, message: "Category name and image are required" });
         }
 
@@ -17,9 +30,20 @@ export const addCategory = async (req, res) => {
             return res.status(400).json({ success: false, message: "Category already exists" });
         }
 
+        // ── Upload to Cloudinary ─────────────────────────────────────────────
+        let imageUrl = "";
+        try {
+            const result = await uploadBufferToCloudinary(imageFile.buffer, "category");
+            imageUrl = result.secure_url;
+        } catch (cloudErr) {
+            console.error("Cloudinary upload error (addCategory):", cloudErr);
+            await notifyCloudinaryError("Add Category — image upload failed", cloudErr);
+            return res.status(500).json({ success: false, message: "Image upload failed. Admins have been notified." });
+        }
+
         const category = new Category({
             name,
-            image,
+            image: imageUrl,
             bgColor: bgColor || "#FEE0E0"
         });
         await category.save();
@@ -108,8 +132,19 @@ export const deleteCategory = async (req, res) => {
             return res.status(404).json({ success: false, message: "Category not found" });
         }
 
-        // Delete image file from uploads folder
-        if (category.image) {
+        // ── Delete from Cloudinary ───────────────────────────────────────────
+        if (category.image && category.image.includes("cloudinary.com")) {
+            const publicId = publicIdFromUrl(category.image);
+            if (publicId) {
+                try {
+                    await deleteFromCloudinary(publicId);
+                } catch (cloudErr) {
+                    console.error("Cloudinary delete error (deleteCategory):", cloudErr);
+                    // We don't block deletion of DB record if Cloudinary fails
+                }
+            }
+        } else if (category.image) {
+            // Delete image file from uploads folder (legacy local files)
             const imagePath = path.join(process.cwd(), 'uploads', category.image);
             if (fs.existsSync(imagePath)) {
                 fs.unlinkSync(imagePath);

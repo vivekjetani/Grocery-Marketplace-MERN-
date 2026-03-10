@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
+
 export const connectCloudinary = async () => {
   cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -6,3 +7,6 @@ export const connectCloudinary = async () => {
     api_secret: process.env.CLOUDINARY_API_SECRET,
   });
 };
+
+// Export the configured cloudinary instance for use in controllers
+export { cloudinary };

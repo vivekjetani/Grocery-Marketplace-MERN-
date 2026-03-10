@@ -5,9 +5,10 @@ import ProductAnalytics from "../../components/ProductAnalytics";
 import { BarChart2, Trash2, CornerUpRight, Package, Search, X } from "lucide-react";
 
 const ProductList = () => {
-  const { products, fetchProducts, axios, categories } = useAppContext();
+  const { products, fetchProducts, axios, categories, getImageUrl } = useAppContext();
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [deleteProductId, setDeleteProductId] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Transfer state
@@ -33,6 +34,7 @@ const ProductList = () => {
   const confirmDelete = async () => {
     if (!deleteProductId) return;
     try {
+      setIsDeleting(true);
       const { data } = await axios.delete(`/api/product/delete/${deleteProductId}`);
       if (data.success) {
         toast.success(data.message);
@@ -43,6 +45,7 @@ const ProductList = () => {
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to delete product");
     } finally {
+      setIsDeleting(false);
       setDeleteProductId(null);
     }
   };
@@ -185,7 +188,7 @@ const ProductList = () => {
                           <td className="px-6 py-4 flex items-center space-x-4">
                             <div className="w-14 h-14 border border-slate-200 dark:border-slate-700 rounded-xl p-1 bg-white dark:bg-slate-800 flex-shrink-0">
                               <img
-                                src={`${import.meta.env.VITE_BACKEND_URL}/images/${product.image[0]}`}
+                                src={getImageUrl(product.image[0])}
                                 alt={product.name}
                                 className="w-full h-full object-contain"
                               />
@@ -303,10 +306,16 @@ const ProductList = () => {
                 Cancel
               </button>
               <button
+                disabled={isDeleting}
                 onClick={confirmDelete}
-                className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white shadow-sm hover:shadow-red-500/20 transition-all font-medium flex items-center gap-2"
+                className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white shadow-sm hover:shadow-red-500/20 transition-all font-medium flex items-center gap-2 disabled:opacity-70"
               >
-                Delete
+                {isDeleting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Deleting...
+                  </>
+                ) : "Delete"}
               </button>
             </div>
           </div>

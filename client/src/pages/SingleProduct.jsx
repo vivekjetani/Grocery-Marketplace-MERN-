@@ -8,7 +8,7 @@ import ReviewForm from "../components/ReviewForm";
 import axios from "axios";
 
 const SingleProduct = () => {
-  const { products, navigate, addToCart } = useAppContext();
+  const { products, navigate, addToCart, getImageUrl } = useAppContext();
   const { id } = useParams();
   const [thumbnail, setThumbnail] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -106,7 +106,7 @@ const SingleProduct = () => {
               >
                 <img
                   className="w-full h-full object-contain p-2"
-                  src={`${import.meta.env.VITE_BACKEND_URL}/images/${image}`}
+                  src={getImageUrl(image)}
                   alt={`Thumbnail ${index + 1}`}
                 />
               </motion.button>
@@ -122,7 +122,7 @@ const SingleProduct = () => {
                 exit={{ opacity: 0, scale: 1.1 }}
                 transition={{ duration: 0.3 }}
                 className="w-full h-full object-contain drop-shadow-2xl"
-                src={`${import.meta.env.VITE_BACKEND_URL}/images/${thumbnail}`}
+                src={getImageUrl(thumbnail)}
                 alt={product.name}
               />
             </AnimatePresence>

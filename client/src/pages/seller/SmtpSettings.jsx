@@ -23,6 +23,7 @@ const NOTIF_TYPES = [
     { key: "dailySummary", label: "Daily Summary", desc: "Day-end revenue & order digest", color: "#3b82f6" },
     { key: "careerApplication", label: "Career Applications", desc: "When a new job application is submitted", color: "#ec4899" },
     { key: "contactInquiry", label: "Contact Inquiries", desc: "When a customer submits a contact form", color: "#10b981" },
+    { key: "cloudinaryError", label: "Cloudinary Upload Errors", desc: "When a file upload to Cloudinary fails", color: "#dc2626" },
 ];
 
 // ─── Helpers ───────────────────────────────────────────────────────
@@ -32,7 +33,7 @@ const defaultAdmin = (email = "") => ({
     frequency: "daily",
     alertHour: 8,
     alertDay: 1,
-    notifications: { lowStock: true, newOrder: true, orderStatus: false, dailySummary: false, careerApplication: true, contactInquiry: true },
+    notifications: { lowStock: true, newOrder: true, orderStatus: false, dailySummary: false, careerApplication: true, contactInquiry: true, cloudinaryError: true },
 });
 
 const fmt12h = (h) => {

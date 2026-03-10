@@ -7,7 +7,7 @@ import { useAppContext } from '../context/AppContext';
 import toast from 'react-hot-toast';
 
 const ProductAnalytics = ({ productId, onClose }) => {
-    const { axios } = useAppContext();
+    const { axios, getImageUrl } = useAppContext();
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState(null);
 
@@ -57,7 +57,7 @@ const ProductAnalytics = ({ productId, onClose }) => {
                     <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-xl border border-slate-200 dark:border-slate-700 p-1 bg-white dark:bg-slate-800">
                             <img
-                                src={`${import.meta.env.VITE_BACKEND_URL}/images/${product.image}`}
+                                src={getImageUrl(product.image)}
                                 alt={product.name}
                                 className="w-full h-full object-contain"
                             />

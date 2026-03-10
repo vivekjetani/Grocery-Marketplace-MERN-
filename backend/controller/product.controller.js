@@ -1,26 +1,49 @@
 import Product from "../models/product.model.js";
 import Order from "../models/order.model.js";
+import { uploadBufferToCloudinary, deleteFromCloudinary, publicIdFromUrl } from "../utils/cloudinaryUpload.js";
 
-// add product :/api/product/add
+// ──────────────────────────────────────────────────────────
+// HELPER: notify admins of cloudinary error (imported lazily
+// to avoid circular deps with email.service → smtp.model)
+// ──────────────────────────────────────────────────────────
+const notifyCloudinaryError = async (context, error) => {
+  try {
+    const { sendCloudinaryErrorEmail } = await import("../services/email.service.js");
+    await sendCloudinaryErrorEmail(context, error.message || String(error));
+  } catch (e) {
+    console.error("Failed to send Cloudinary error notification:", e);
+  }
+};
+
+// add product :/api/product/add-product
 export const addProduct = async (req, res) => {
   try {
     const { name, price, offerPrice, description, category, unit, stockQuantity } = req.body;
-    const image = req.files?.map((file) => file.filename);
-    if (
-      !name ||
-      !price ||
-      !offerPrice ||
-      !description ||
-      !category ||
-      !unit ||
-      !image ||
-      image.length === 0
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "All fields including images are required",
-      });
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ success: false, message: "All fields including images are required" });
     }
+
+    if (!name || !price || !offerPrice || !description || !category || !unit) {
+      return res.status(400).json({ success: false, message: "All fields including images are required" });
+    }
+
+    // ── Upload images to Cloudinary /products folder ──────────────────────
+    let imageUrls = [];
+    try {
+      const uploadPromises = req.files.map((file) =>
+        uploadBufferToCloudinary(file.buffer, "products")
+      );
+      const results = await Promise.all(uploadPromises);
+      imageUrls = results.map((r) => r.secure_url);
+    } catch (cloudErr) {
+      console.error("Cloudinary upload error (addProduct):", cloudErr);
+      await notifyCloudinaryError("Add Product — image upload failed", cloudErr);
+      return res.status(500).json({ success: false, message: "Image upload failed. Admins have been notified." });
+    }
+
+    // ── OLD: local disk save (commented out) ──────────────────────────────
+    // const image = req.files?.map((file) => file.filename);
 
     const qty = parseInt(stockQuantity) || 0;
     const product = new Product({
@@ -30,7 +53,7 @@ export const addProduct = async (req, res) => {
       description,
       category,
       unit,
-      image,
+      image: imageUrls,
       stockQuantity: qty,
       inStock: qty > 0,
     });
@@ -44,10 +67,7 @@ export const addProduct = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in addProduct:", error);
-
-    return res
-      .status(500)
-      .json({ success: false, message: "Server error while adding product" });
+    return res.status(500).json({ success: false, message: "Server error while adding product" });
   }
 };
 
@@ -80,6 +100,7 @@ export const getProducts = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
 // get single product :/api/product/id
 export const getProductById = async (req, res) => {
   try {
@@ -90,6 +111,7 @@ export const getProductById = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
 // change stock  :/api/product/stock
 export const changeStock = async (req, res) => {
   try {
@@ -99,9 +121,7 @@ export const changeStock = async (req, res) => {
       { inStock },
       { new: true }
     );
-    res
-      .status(200)
-      .json({ success: true, product, message: "Stock updated successfully" });
+    res.status(200).json({ success: true, product, message: "Stock updated successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -110,7 +130,6 @@ export const changeStock = async (req, res) => {
 // get best sellers
 export const getBestSellers = async (req, res) => {
   try {
-    // Global best sellers based on orderCount and averageRating
     const products = await Product.find({ inStock: true })
       .sort({ orderCount: -1, averageRating: -1, numReviews: -1 })
       .limit(10);
@@ -124,7 +143,7 @@ export const getBestSellers = async (req, res) => {
 export const getRecommendedProducts = async (req, res) => {
   try {
     const { category, excludeId } = req.query;
-    const userId = req.query.userId; // Optional userId for personalization
+    const userId = req.query.userId;
 
     let query = { inStock: true };
     if (excludeId) {
@@ -133,17 +152,13 @@ export const getRecommendedProducts = async (req, res) => {
 
     let recommendedProducts = [];
 
-    // If userId is provided, try to find products based on user's past orders
     if (userId) {
       const userOrders = await Order.find({ userId }).limit(10);
       if (userOrders.length > 0) {
-        // Fetch full product details to get categories
         const productIds = userOrders.flatMap(order => order.items.map(item => item.product));
         const purchasedProducts = await Product.find({ _id: { $in: productIds } });
         const purchasedCategories = [...new Set(purchasedProducts.map(p => p.category))].filter(Boolean);
 
-        // If we don't have categories in orders directly, we might need a different approach or assume they want products from same categories
-        // Let's assume we want to suggest products from categories the user has bought before
         if (purchasedCategories.length > 0) {
           recommendedProducts = await Product.find({
             ...query,
@@ -153,7 +168,6 @@ export const getRecommendedProducts = async (req, res) => {
       }
     }
 
-    // Fallback to category-based or global high-rated
     if (recommendedProducts.length < 5) {
       const extraQuery = { ...query };
       if (category) extraQuery.category = category;
@@ -162,7 +176,6 @@ export const getRecommendedProducts = async (req, res) => {
         .sort({ averageRating: -1, orderCount: -1 })
         .limit(10 - recommendedProducts.length);
 
-      // Avoid duplicates
       const prodIds = new Set(recommendedProducts.map(p => p._id.toString()));
       extraProducts.forEach(p => {
         if (!prodIds.has(p._id.toString())) {
@@ -187,13 +200,11 @@ export const getProductAnalytics = async (req, res) => {
       return res.status(404).json({ success: false, message: "Product not found" });
     }
 
-    // Fetch all orders containing this product
     const orders = await Order.find({
       "items.product": id,
       status: { $ne: "Cancelled" }
     });
 
-    // Process orders for time-series data (last 30 days)
     const last30Days = [];
     for (let i = 29; i >= 0; i--) {
       const d = new Date();
@@ -216,7 +227,6 @@ export const getProductAnalytics = async (req, res) => {
       hourCounts[orderHour]++;
 
       const dayData = last30Days.find(d => d.fullDate === orderDate);
-
       const productItem = order.items.find(item => item.product.toString() === id);
       if (productItem) {
         totalSold += productItem.quantity;
@@ -228,7 +238,6 @@ export const getProductAnalytics = async (req, res) => {
       }
     });
 
-    // Find peak hour
     let peakHour = 0;
     let maxOrdersInHour = 0;
     hourCounts.forEach((count, hour) => {
@@ -238,7 +247,6 @@ export const getProductAnalytics = async (req, res) => {
       }
     });
 
-    // Formatting peak hour string
     const peakHourStr = `${peakHour % 12 || 12}${peakHour >= 12 ? ' PM' : ' AM'}`;
 
     res.status(200).json({
@@ -264,11 +272,9 @@ export const getProductAnalytics = async (req, res) => {
   }
 };
 
-// ----------------------------------------------------
-// NEW APIS: CATEGORY PRODUCT MANAGEMENT
-// ----------------------------------------------------
-import fs from "fs";
-import path from "path";
+// ──────────────────────────────────────────────────────────────────────────────
+// CATEGORY PRODUCT MANAGEMENT
+// ──────────────────────────────────────────────────────────────────────────────
 
 // delete a single product
 export const deleteProduct = async (req, res) => {
@@ -280,15 +286,23 @@ export const deleteProduct = async (req, res) => {
       return res.status(404).json({ success: false, message: "Product not found" });
     }
 
-    // Delete associated images
+    // ── Delete images from Cloudinary ─────────────────────────────────────
     if (product.image && product.image.length > 0) {
-      product.image.forEach((img) => {
-        const imagePath = path.join(process.cwd(), 'uploads', img);
-        if (fs.existsSync(imagePath)) {
-          fs.unlinkSync(imagePath);
-        }
-      });
+      for (const imgUrl of product.image) {
+        const publicId = publicIdFromUrl(imgUrl);
+        if (publicId) await deleteFromCloudinary(publicId, "image");
+      }
     }
+
+    // ── OLD: local disk delete (commented out) ─────────────────────────────
+    // import fs from "fs";
+    // import path from "path";
+    // if (product.image && product.image.length > 0) {
+    //   product.image.forEach((img) => {
+    //     const imagePath = path.join(process.cwd(), 'uploads', img);
+    //     if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+    //   });
+    // }
 
     await Product.findByIdAndDelete(id);
     res.status(200).json({ success: true, message: "Product deleted successfully" });
@@ -308,17 +322,25 @@ export const deleteProductsByCategory = async (req, res) => {
 
     const products = await Product.find({ category });
 
-    // Cleanup images for all deleted products
-    products.forEach((product) => {
+    // ── Delete images from Cloudinary ─────────────────────────────────────
+    for (const product of products) {
       if (product.image && Array.isArray(product.image)) {
-        product.image.forEach((img) => {
-          const imagePath = path.join(process.cwd(), 'uploads', img);
-          if (fs.existsSync(imagePath)) {
-            fs.unlinkSync(imagePath);
-          }
-        });
+        for (const imgUrl of product.image) {
+          const publicId = publicIdFromUrl(imgUrl);
+          if (publicId) await deleteFromCloudinary(publicId, "image");
+        }
       }
-    });
+    }
+
+    // ── OLD: local disk delete (commented out) ─────────────────────────────
+    // products.forEach((product) => {
+    //   if (product.image && Array.isArray(product.image)) {
+    //     product.image.forEach((img) => {
+    //       const imagePath = path.join(process.cwd(), 'uploads', img);
+    //       if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+    //     });
+    //   }
+    // });
 
     await Product.deleteMany({ category });
     res.status(200).json({ success: true, message: `All products in ${category} deleted` });

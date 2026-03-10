@@ -106,7 +106,7 @@ export const AppContextProvider = ({ children }) => {
           _id: cat._id,
           text: cat.name,
           path: cat.name,
-          image: cat.image.startsWith("http") ? cat.image : `${import.meta.env.VITE_BACKEND_URL}/images/${cat.image}`,
+          image: getImageUrl(cat.image),
           bgColor: cat.bgColor || "#FEE0E0",
           isDynamic: true,
         }));
@@ -117,6 +117,12 @@ export const AppContextProvider = ({ children }) => {
       console.error("Error fetching categories:", error);
     }
   };
+  // helper for image urls
+  const getImageUrl = (url) => {
+    if (!url) return "";
+    return url.startsWith("http") ? url : `${import.meta.env.VITE_BACKEND_URL}/images/${url}`;
+  };
+
   // add product to cart
   const addToCart = (itemId) => {
     let cartData = structuredClone(cartItems || {}); // safeguard for undefined
@@ -234,6 +240,7 @@ export const AppContextProvider = ({ children }) => {
     setIsDarkMode,
     appliedCoupon,
     setAppliedCoupon,
+    getImageUrl,
     backendUrl: import.meta.env.VITE_BACKEND_URL,
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

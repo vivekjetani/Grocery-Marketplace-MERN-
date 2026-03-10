@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { MapPin, Clock, Briefcase, ArrowRight, Star, FileSearch, PhoneCall, Code2, Users2, Heart, PartyPopper } from "lucide-react";
 
 const Careers = () => {
-    const { axios, backendUrl } = useContext(AppContext);
+    const { axios, getImageUrl } = useContext(AppContext);
     const [jobs, setJobs] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -95,7 +95,7 @@ const Careers = () => {
                                 {job.bannerUrl && (
                                     <div className="h-24 w-full md:w-64 md:h-full md:absolute right-0 top-0 overflow-hidden">
                                         <img
-                                            src={`${backendUrl}/images/${job.bannerUrl}`}
+                                            src={getImageUrl(job.bannerUrl)}
                                             alt="Banner"
                                             className="w-full h-full object-cover transform scale-100 group-hover:scale-110 transition-transform duration-700 opacity-20 dark:opacity-10 md:opacity-100 md:animate-pulse shadow-inner"
                                             style={{ "-webkit-mask-image": "linear-gradient(to right, transparent, black)" }}

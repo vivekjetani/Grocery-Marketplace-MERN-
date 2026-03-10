@@ -537,7 +537,11 @@ export const sendCareerApplicationEmail = async (application, career, adminEmail
         const transporter = await createTransporter();
         const smtpSettings = await Smtp.findOne();
 
-        const resumeLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/images/${application.resumeUrl}`;
+        // ── Resume link now points to Cloudinary URL directly ─────────────────
+        const resumeLink = application.resumeUrl; // Cloudinary secure_url
+
+        // OLD: local link (commented out)
+        // const resumeLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/images/${application.resumeUrl}`;
 
         const content = `
           <h2 style="color:#2563eb;">📄 New Job Application Received</h2>
@@ -547,7 +551,7 @@ export const sendCareerApplicationEmail = async (application, career, adminEmail
             <p style="margin:5px 0;"><strong>Applicant Name:</strong> ${application.applicantName}</p>
             <p style="margin:5px 0;"><strong>Email:</strong> <a href="mailto:${application.applicantEmail}">${application.applicantEmail}</a></p>
             <p style="margin:5px 0;"><strong>Phone:</strong> ${application.applicantPhone || 'N/A'}</p>
-            ${application.coverLetter ? `<p style="margin:10px 0 5px;"><strong>Cover Letter:</strong></p><div style="background:#fff;padding:10px;border-radius:4px;border:1px solid #e2e8f0;">${application.coverLetter.replace(/\\n/g, '<br>')}</div>` : ''}
+            ${application.coverLetter ? `<p style="margin:10px 0 5px;"><strong>Cover Letter:</strong></p><div style="background:#fff;padding:10px;border-radius:4px;border:1px solid #e2e8f0;">${application.coverLetter.replace(/\n/g, '<br>')}</div>` : ''}
           </div>
 
           <div style="margin-top:20px;text-align:center;">
@@ -564,13 +568,13 @@ export const sendCareerApplicationEmail = async (application, career, adminEmail
             to: adminEmails.join(","),
             subject: `New Application: ${career.title} - ${application.applicantName}`,
             html: emailWrapper(content),
-            // Optionally attach the resume directly if the file size isn't a concern:
-            attachments: [
-                {
-                    filename: application.resumeUrl.substring(application.resumeUrl.indexOf('-') + 1), // Optional clean up
-                    path: `uploads/${application.resumeUrl}`
-                }
-            ]
+            // ── OLD: local file attachment (commented out) ─────────────────────
+            // attachments: [
+            //     {
+            //         filename: application.resumeUrl.substring(application.resumeUrl.indexOf('-') + 1),
+            //         path: `uploads/${application.resumeUrl}`
+            //     }
+            // ]
         });
 
         return { success: true };
@@ -722,3 +726,50 @@ export const sendResetPasswordEmail = async (toEmail, name, resetToken, expiresM
     }
 };
 
+// ─── Cloudinary Error Alert to Admins ─────────────────────────────────────────
+// Sent when a Cloudinary upload/delete operation fails so admins are aware.
+export const sendCloudinaryErrorEmail = async (context, errorMessage) => {
+    try {
+        const smtpSettings = await Smtp.findOne();
+        if (!smtpSettings || !smtpSettings.isEnabled) return;
+
+        // Only send to admins who have cloudinaryError notifications enabled
+        const adminEmails = (smtpSettings.admins || [])
+            .filter(a => a.isEnabled && a.notifications?.cloudinaryError !== false)
+            .map(a => a.email);
+
+        if (adminEmails.length === 0) return;
+
+        const transporter = await createTransporter();
+
+        const content = `
+          <h2 style="color:#dc2626;">⚠️ Cloudinary Upload Error</h2>
+          <p>A file upload to Cloudinary has failed on your Gramodaya store. Please review the details below.</p>
+
+          <div style="margin:20px 0;padding:20px;background:#fef2f2;border:2px solid #fca5a5;border-radius:10px;">
+            <p style="margin:0 0 8px;font-weight:700;color:#991b1b;">Context:</p>
+            <p style="margin:0 0 12px;color:#7f1d1d;font-size:14px;">${context}</p>
+            <p style="margin:0 0 4px;font-weight:700;color:#991b1b;">Error Message:</p>
+            <pre style="margin:0;background:#fff;padding:10px;border-radius:6px;font-size:12px;color:#b91c1c;white-space:pre-wrap;word-break:break-all;">${errorMessage}</pre>
+          </div>
+
+          <p style="font-size:13px;color:#64748b;">
+            This error means a file was <strong>not saved to Cloudinary</strong>. The affected record may be incomplete.
+            Please check your Cloudinary credentials and storage limits.
+          </p>
+
+          <p style="margin-top:20px;">
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/seller" class="btn" style="background:#dc2626;">Go to Admin Panel</a>
+          </p>
+        `;
+
+        await transporter.sendMail({
+            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
+            to: adminEmails.join(","),
+            subject: `⚠️ Cloudinary Error — ${context}`,
+            html: emailWrapper(content),
+        });
+    } catch (error) {
+        console.error("Failed to send Cloudinary error email:", error);
+    }
+};

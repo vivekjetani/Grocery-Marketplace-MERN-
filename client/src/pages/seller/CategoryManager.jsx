@@ -5,7 +5,7 @@ import { Plus, Trash2, FolderPlus, Edit2, ChevronDown, ChevronUp, PackageOpen, C
 import ConfirmModal from "../../components/ConfirmModal";
 
 const CategoryManager = () => {
-    const { axios, categories, fetchCategories, products, fetchProducts } = useAppContext();
+    const { axios, categories, fetchCategories, products, fetchProducts, getImageUrl } = useAppContext();
     const [newCategory, setNewCategory] = useState("");
     const [categoryImage, setCategoryImage] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -44,9 +44,12 @@ const CategoryManager = () => {
 
     const handleAddCategory = async (e) => {
         e.preventDefault();
-        if (!newCategory.trim()) return;
+        if (!newCategory.trim()) {
+            toast.error("Category name is required.");
+            return;
+        }
         if (!categoryImage) {
-            toast.error("Please select an image for the category.");
+            toast.error("Category image is required.");
             return;
         }
 
@@ -312,7 +315,7 @@ const CategoryManager = () => {
                 <form onSubmit={handleAddCategory} className="flex flex-col gap-4 mb-8 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                     <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
                         <div className="flex-1 w-full">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Category Name</label>
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Category Name <span className="text-rose-500">*</span></label>
                             <input
                                 type="text"
                                 value={newCategory}
@@ -323,7 +326,7 @@ const CategoryManager = () => {
                             />
                         </div>
                         <div className="flex-1 w-full relative">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Category Image</label>
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Category Image <span className="text-rose-500">*</span></label>
                             <input
                                 type="file"
                                 id="categoryImage"
@@ -515,7 +518,7 @@ const CategoryManager = () => {
                                                                                 <div className="flex-shrink-0">
                                                                                     {isSelected ? <CheckSquare size={18} className="text-indigo-600" /> : <Square size={18} className="text-slate-400" />}
                                                                                 </div>
-                                                                                <img src={`${import.meta.env.VITE_BACKEND_URL}/images/${product.image[0]}`} alt={product.name} className="w-10 h-10 object-contain rounded-md bg-white border border-slate-100 dark:border-slate-700" />
+                                                                                <img src={getImageUrl(product.image[0])} alt={product.name} className="w-10 h-10 object-contain rounded-md bg-white border border-slate-100 dark:border-slate-700" />
                                                                                 <div>
                                                                                     <p className="font-medium text-sm text-slate-800 dark:text-slate-200 truncate max-w-[120px] sm:max-w-[180px]">{product.name}</p>
                                                                                     <p className="text-xs text-slate-500">${product.price}</p>
@@ -629,6 +632,7 @@ const CategoryManager = () => {
                 confirmText="Delete Everything"
                 isLoading={isDeleting}
             />
+
             {/* Rename Category Modal */}
             {renameCategoryObj && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">

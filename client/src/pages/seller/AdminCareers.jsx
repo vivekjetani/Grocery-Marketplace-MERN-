@@ -27,7 +27,7 @@ import {
 import ConfirmModal from "../../components/ConfirmModal";
 
 const AdminCareers = () => {
-  const { axios, backendUrl } = useContext(AppContext);
+  const { axios, backendUrl, getImageUrl } = useContext(AppContext);
   const [activeTab, setActiveTab] = useState("jobs"); // 'jobs' | 'applications'
 
   // Jobs State
@@ -35,6 +35,7 @@ const AdminCareers = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentJob, setCurrentJob] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [bannerPreview, setBannerPreview] = useState(null);
   const [crop, setCrop] = useState(null);
   const [completedCrop, setCompletedCrop] = useState(null);
@@ -187,7 +188,7 @@ const AdminCareers = () => {
       status: job.status,
       banner: null
     });
-    setBannerPreview(job.bannerUrl ? `${backendUrl}/images/${job.bannerUrl}` : null);
+    setBannerPreview(job.bannerUrl ? getImageUrl(job.bannerUrl) : null);
     setImgSrc('');
     setIsEditing(true);
     setCurrentJob(job);
@@ -211,6 +212,7 @@ const AdminCareers = () => {
     }
 
     try {
+      setIsSaving(true);
       if (isEditing) {
         const res = await axios.put(`/api/career/update/${currentJob._id}`, data);
         if (res.data.success) toast.success("Job updated");
@@ -222,6 +224,8 @@ const AdminCareers = () => {
       fetchJobs();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to save job");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -337,7 +341,7 @@ const AdminCareers = () => {
                     {/* Banner */}
                     <div className="h-32 bg-slate-200 dark:bg-slate-700 relative overflow-hidden group">
                       {job.bannerUrl ? (
-                        <img src={`${backendUrl}/images/${job.bannerUrl}`} alt="Banner" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                        <img src={getImageUrl(job.bannerUrl)} alt="Banner" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-slate-400">
                           <ImageIcon size={32} className="opacity-50" />
@@ -423,7 +427,7 @@ const AdminCareers = () => {
                         </td>
                         <td className="p-5 text-center">
                           <a
-                            href={`${backendUrl}/images/${app.resumeUrl}`}
+                            href={getImageUrl(app.resumeUrl)}
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center justify-center p-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl hover:bg-indigo-100 transition-colors"
@@ -573,8 +577,22 @@ const AdminCareers = () => {
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-3 rounded-2xl font-bold text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
                   Cancel
                 </button>
-                <button type="submit" form="jobForm" className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-indigo-200 dark:shadow-none transition-all">
-                  <Save size={18} /> {isEditing ? "Save Changes" : "Publish Job"}
+                <button
+                  disabled={isSaving}
+                  type="submit"
+                  form="jobForm"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-indigo-200 dark:shadow-none transition-all disabled:bg-slate-300 dark:disabled:bg-slate-700"
+                >
+                  {isSaving ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save size={18} /> {isEditing ? "Save Changes" : "Publish Job"}
+                    </>
+                  )}
                 </button>
               </div>
             </motion.div>

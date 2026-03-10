@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 const MARQUEE_TEXT = "OUT OF STOCK · SOLD OUT · OUT OF STOCK · SOLD OUT · OUT OF STOCK · SOLD OUT · ";
 
 const ProductCard = ({ product }) => {
-  const { addToCart, removeFromCart, cartItems, navigate } = useAppContext();
+  const { addToCart, removeFromCart, cartItems, navigate, getImageUrl } = useAppContext();
   const isOutOfStock = !product.inStock || (product.stockQuantity ?? 1) === 0;
 
   return (
@@ -110,7 +110,7 @@ const ProductCard = ({ product }) => {
             whileHover={{ scale: isOutOfStock ? 1 : 1.1 }}
             transition={{ duration: 0.4 }}
             className={`object-contain h-full w-full drop-shadow-md transition-all ${isOutOfStock ? "grayscale opacity-60" : ""}`}
-            src={`${import.meta.env.VITE_BACKEND_URL}/images/${product.image[0]}`}
+            src={getImageUrl(product.image[0])}
             alt={product.name}
           />
         </div>

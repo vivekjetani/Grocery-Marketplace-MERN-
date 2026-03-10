@@ -18,6 +18,7 @@ const Cart = () => {
     user,
     appliedCoupon,
     setAppliedCoupon,
+    getImageUrl,
   } = useAppContext();
 
   const [cartArray, setCartArray] = useState([]);
@@ -264,7 +265,7 @@ const Cart = () => {
                       <Link to={`/product/${product.category.toLowerCase()}/${product._id}`} className="shrink-0 w-24 h-24 bg-slate-50 dark:bg-slate-900/50 rounded-2xl flex items-center justify-center overflow-hidden border border-slate-100 dark:border-slate-800">
                         <img
                           className="w-full h-full object-contain p-2 hover:scale-110 transition-transform duration-300"
-                          src={`${import.meta.env.VITE_BACKEND_URL}/images/${product.image[0]}`}
+                          src={getImageUrl(product.image[0])}
                           alt={product.name}
                         />
                       </Link>

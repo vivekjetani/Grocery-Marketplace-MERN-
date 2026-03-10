@@ -1,9 +1,7 @@
 import Newsletter from "../models/newsletter.model.js";
 import crypto from "crypto";
 import { sendNewsletterEmail } from "../services/email.service.js";
-import { v2 as cloudinary } from "cloudinary";
-import fs from "fs";
-
+import { uploadBufferToCloudinary } from "../utils/cloudinaryUpload.js";
 import User from "../models/user.model.js";
 
 // @desc    Subscribe to newsletter
@@ -145,16 +143,17 @@ export const uploadImage = async (req, res) => {
             return res.status(400).json({ success: false, message: "No image file provided" });
         }
 
-        // Upload to Cloudinary
-        const result = await cloudinary.uploader.upload(req.file.path, {
-            folder: "newsletter_images",
-            resource_type: "auto",
-        });
+        // ── Upload to Cloudinary /newsletter folder ────────────────────────
+        const result = await uploadBufferToCloudinary(req.file.buffer, "newsletter");
 
-        // Delete temporary file from local storage after upload to Cloudinary
-        if (fs.existsSync(req.file.path)) {
-            fs.unlinkSync(req.file.path);
-        }
+        // ── OLD: upload from disk path + local file cleanup (commented out) ─
+        // const result = await cloudinary.uploader.upload(req.file.path, {
+        //     folder: "newsletter_images",
+        //     resource_type: "auto",
+        // });
+        // if (fs.existsSync(req.file.path)) {
+        //     fs.unlinkSync(req.file.path);
+        // }
 
         res.status(200).json({
             success: true,
@@ -164,6 +163,15 @@ export const uploadImage = async (req, res) => {
         });
     } catch (error) {
         console.error("Error uploading newsletter image:", error);
-        res.status(500).json({ success: false, message: "Failed to upload image" });
+
+        // Notify admins of Cloudinary error
+        try {
+            const { sendCloudinaryErrorEmail } = await import("../services/email.service.js");
+            await sendCloudinaryErrorEmail("Newsletter — image upload failed", error.message || String(error));
+        } catch (e) {
+            console.error("Failed to send Cloudinary error notification:", e);
+        }
+
+        res.status(500).json({ success: false, message: "Image upload failed. Admins have been notified." });
     }
 };

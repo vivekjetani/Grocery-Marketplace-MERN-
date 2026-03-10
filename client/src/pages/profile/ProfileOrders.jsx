@@ -8,7 +8,7 @@ import ReviewForm from "../../components/ReviewForm";
 const ProfileOrders = () => {
   const [myOrders, setMyOrders] = useState([]);
   const [reviewProductId, setReviewProductId] = useState(null);
-  const { axios, user, navigate, cartItems, setCartItems } = useContext(AppContext);
+  const { axios, user, navigate, cartItems, setCartItems, getImageUrl } = useContext(AppContext);
 
   const fetchOrders = async () => {
     try {
@@ -121,7 +121,7 @@ const ProfileOrders = () => {
                 <div key={itemIndex} className={`flex flex-col md:flex-row md:items-center justify-between p-4 md:px-6 gap-4 ${order.items.length !== itemIndex + 1 ? "border-b border-slate-100 dark:border-slate-700" : ""}`}>
                   <div className="flex items-center gap-4">
                     <div className="w-16 h-16 bg-slate-50 dark:bg-slate-700 rounded-2xl flex items-center justify-center overflow-hidden shrink-0">
-                      <img src={`${import.meta.env.VITE_BACKEND_URL}/images/${item.product.image[0]}`} alt={item.product.name} className="w-full h-full object-contain p-1" />
+                      <img src={getImageUrl(item.product.image[0])} alt={item.product.name} className="w-full h-full object-contain p-1" />
                     </div>
                     <div>
                       <h3 className="font-bold text-slate-900 dark:text-white text-base">{item.product.name}</h3>

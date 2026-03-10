@@ -37,6 +37,7 @@ const smtpSchema = new mongoose.Schema({
                 dailySummary: { type: Boolean, default: false },  // daily digest
                 careerApplication: { type: Boolean, default: true }, // new career application
                 contactInquiry: { type: Boolean, default: true }, // new contact us message
+                cloudinaryError: { type: Boolean, default: true }, // cloudinary upload failures
             }
         }
     ],

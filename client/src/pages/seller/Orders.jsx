@@ -6,7 +6,7 @@ import { Package, Calendar, User, MapPin, CreditCard, CheckCircle, Clock } from 
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
-  const { axios, fetchProducts } = useContext(AppContext);
+  const { axios, fetchProducts, getImageUrl } = useContext(AppContext);
 
   const fetchOrders = async () => {
     try {
@@ -131,7 +131,7 @@ const Orders = () => {
                     <div key={itemIdx} className="flex gap-4 items-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-700/20 group-hover:bg-indigo-50/30 dark:group-hover:bg-indigo-900/10 transition-colors">
                       <img
                         className="w-14 h-14 object-cover rounded-xl border border-slate-200 dark:border-slate-600"
-                        src={item.product?.image?.[0] ? `${import.meta.env.VITE_BACKEND_URL}/images/${item.product.image[0]}` : ""}
+                        src={getImageUrl(item.product?.image?.[0])}
                         alt={item.product?.name || "Product"}
                       />
                       <div className="flex-grow">

@@ -9,7 +9,7 @@ import ConfirmModal from "../../components/ConfirmModal";
 const UserDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { axios } = useContext(AppContext);
+    const { axios, getImageUrl } = useContext(AppContext);
     const [data, setData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -204,7 +204,7 @@ const UserDetails = () => {
                                     <div className="flex justify-between items-start mb-3">
                                         <div className="flex items-center gap-3 w-3/4">
                                             {review.productId?.image?.[0] ? (
-                                                <img src={`${import.meta.env.VITE_BACKEND_URL}/images/${review.productId.image[0]}`} alt="product" className="w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-600 shrink-0" />
+                                                <img src={getImageUrl(review.productId.image[0])} alt="product" className="w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-600 shrink-0" />
                                             ) : (
                                                 <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0">
                                                     <Package size={16} className="text-slate-400" />

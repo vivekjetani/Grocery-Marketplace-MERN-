@@ -8,7 +8,7 @@ import { MapPin, Clock, IndianRupee, ArrowLeft, Send, Paperclip, CheckCircle } f
 const JobDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { axios, backendUrl } = useContext(AppContext);
+  const { axios, getImageUrl } = useContext(AppContext);
 
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -116,7 +116,7 @@ const JobDetails = () => {
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="w-full h-48 md:h-72 rounded-3xl overflow-hidden mb-10 shadow-xl"
           >
-            <img src={`${backendUrl}/images/${job.bannerUrl}`} alt="Job Banner" className="w-full h-full object-cover" />
+            <img src={getImageUrl(job.bannerUrl)} alt="Job Banner" className="w-full h-full object-cover" />
           </motion.div>
         )}
 
