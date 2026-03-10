@@ -69,7 +69,7 @@ export const AppContextProvider = ({ children }) => {
       const { data } = await axios.get("/api/user/is-auth");
       if (data.success) {
         setUser(data.user);
-        setCartItems(data.user.cart);
+        setCartItems(data.user.cartItems);
       }
       // Silently handle unauthenticated state — no toast for guests
     } catch (error) {

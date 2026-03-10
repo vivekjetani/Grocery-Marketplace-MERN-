@@ -19,7 +19,7 @@ const router = express.Router();
 
 router.post("/add-product", authSeller, upload.array("image"), addProduct);
 router.get("/list", getProducts);
-router.get("/id", getProductById);
+router.get("/id/:id", getProductById);
 router.post("/stock", authSeller, changeStock);
 router.post("/update-stock", authSeller, updateStockQuantity);
 router.get("/best-sellers", getBestSellers);
@@ -28,7 +28,7 @@ router.get("/analytics/:id", authSeller, getProductAnalytics);
 
 // Category Product Management Routes
 router.delete("/delete/:id", authSeller, deleteProduct);
-router.delete("/delete-by-category", authSeller, deleteProductsByCategory);
+router.post("/delete-by-category", authSeller, deleteProductsByCategory);
 router.put("/transfer", authSeller, transferProducts);
 
 export default router;

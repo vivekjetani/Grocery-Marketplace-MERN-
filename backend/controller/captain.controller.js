@@ -131,16 +131,8 @@ export const respondToOrder = async (req, res) => {
             order.status = "In Progress";
             await order.save();
 
-            // Deduct stock for each item in this order
             const populatedOrder = await Order.findById(order._id).populate("items.product");
-            if (populatedOrder) {
-                for (const item of populatedOrder.items) {
-                    if (!item.product) continue;
-                    const product = item.product;
-                    const newQty = Math.max(0, (product.stockQuantity || 0) - item.quantity);
-                    await product.constructor.findByIdAndUpdate(product._id, { stockQuantity: newQty });
-                }
-            }
+            // Stock is now deducted at order placement, so no deduction needed here.
 
             // Mark captain as busy
             await Captain.findByIdAndUpdate(req.captainId, { isBusy: true });
@@ -154,6 +146,19 @@ export const respondToOrder = async (req, res) => {
             order.status = "Rejected";
             order.captainId = null;
             await order.save();
+
+            // Restore stock since order is permanently rejected
+            const rejectedOrder = await Order.findById(order._id).populate("items.product");
+            if (rejectedOrder) {
+                for (const item of rejectedOrder.items) {
+                    if (!item.product) continue;
+                    const pId = item.product._id || item.product;
+                    await Product.findByIdAndUpdate(pId, [
+                        { $set: { stockQuantity: { $add: ["$stockQuantity", item.quantity] } } },
+                        { $set: { inStock: { $gt: ["$stockQuantity", 0] } } }
+                    ]);
+                }
+            }
 
             // Send rejection email to customer
             (async () => {

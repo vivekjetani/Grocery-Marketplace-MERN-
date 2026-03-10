@@ -24,6 +24,7 @@ const Cart = () => {
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [paymentOption, setPaymentOption] = useState("COD");
   const [loading, setLoading] = useState(false);
+  const [outOfStockAlert, setOutOfStockAlert] = useState(null);
 
   const getCart = () => {
     let tempArray = [];
@@ -83,13 +84,17 @@ const Cart = () => {
         if (data.success) {
           toast.success("Order placed successfully! 🎉");
           setCartItems({});
-          navigate("/my-orders");
+          navigate("/profile/orders");
         } else {
           toast.error(data.message);
         }
       }
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Something went wrong.");
+      if (error?.response?.data?.outOfStockItems) {
+        setOutOfStockAlert(error.response.data.outOfStockItems);
+      } else {
+        toast.error(error?.response?.data?.message || "Something went wrong.");
+      }
     } finally {
       setLoading(false);
     }
@@ -363,6 +368,79 @@ const Cart = () => {
           </motion.div>
         </div>
       )}
+
+      {/* Out of Stock Modal */}
+      <AnimatePresence>
+        {outOfStockAlert && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl relative border border-slate-100 dark:border-slate-700"
+            >
+              <button
+                onClick={() => setOutOfStockAlert(null)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+
+              <div className="flex flex-col items-center text-center mb-6">
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-full flex items-center justify-center mb-4">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Items Unavailable</h3>
+                <p className="text-slate-500 dark:text-slate-400">
+                  Some items in your cart went out of stock while you were shopping.
+                </p>
+              </div>
+
+              <div className="max-h-48 overflow-y-auto mb-6 pr-2 space-y-3">
+                {outOfStockAlert.map((item, idx) => (
+                  <div key={idx} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
+                    <div>
+                      <p className="font-bold text-sm text-slate-900 dark:text-white">{item.name}</p>
+                      <p className="text-xs text-red-500 font-medium">Requested: {item.requested} | Available: {item.available}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col md:flex-row gap-3">
+                <button
+                  onClick={() => setOutOfStockAlert(null)}
+                  className="w-full py-3.5 px-4 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    let updatedCart = { ...cartItems };
+                    outOfStockAlert.forEach(i => {
+                      delete updatedCart[i.productId];
+                    });
+                    setCartItems(updatedCart);
+                    setOutOfStockAlert(null);
+                    toast.success("Unavailable items removed.");
+                  }}
+                  className="w-full py-3.5 px-4 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-colors shadow-lg shadow-red-500/20 flex justify-center items-center"
+                >
+                  Remove Items
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };

@@ -74,14 +74,9 @@ export const getUsersForSeller = async (req, res) => {
   try {
     const users = await User.aggregate([
       {
-        $addFields: {
-          userIdString: { $toString: "$_id" }
-        }
-      },
-      {
         $lookup: {
           from: "orders",
-          localField: "userIdString",
+          localField: "_id",
           foreignField: "userId",
           as: "orders"
         }

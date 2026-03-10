@@ -83,7 +83,7 @@ export const getProducts = async (req, res) => {
 // get single product :/api/product/id
 export const getProductById = async (req, res) => {
   try {
-    const { id } = req.body;
+    const { id } = req.params;
     const product = await Product.findById(id);
     res.status(200).json({ success: true, product });
   } catch (error) {
@@ -137,9 +137,10 @@ export const getRecommendedProducts = async (req, res) => {
     if (userId) {
       const userOrders = await Order.find({ userId }).limit(10);
       if (userOrders.length > 0) {
-        const purchasedCategories = [...new Set(userOrders.flatMap(order =>
-          order.items.map(item => item.product.category) // This assumes product is populated or we have category in items
-        ))].filter(Boolean);
+        // Fetch full product details to get categories
+        const productIds = userOrders.flatMap(order => order.items.map(item => item.product));
+        const purchasedProducts = await Product.find({ _id: { $in: productIds } });
+        const purchasedCategories = [...new Set(purchasedProducts.map(p => p.category))].filter(Boolean);
 
         // If we don't have categories in orders directly, we might need a different approach or assume they want products from same categories
         // Let's assume we want to suggest products from categories the user has bought before

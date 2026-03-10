@@ -24,6 +24,28 @@ export const placeOrderCOD = async (req, res) => {
         .status(400)
         .json({ message: "Invalid order details", success: false });
     }
+    // Stock Validation Check
+    const outOfStockItems = [];
+    for (const item of items) {
+      const product = await Product.findById(item.product);
+      if (!product || !product.inStock || product.stockQuantity < item.quantity) {
+        outOfStockItems.push({
+          productId: item.product,
+          name: product ? product.name : "Unknown Product",
+          requested: item.quantity,
+          available: product ? product.stockQuantity : 0
+        });
+      }
+    }
+
+    if (outOfStockItems.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Some items in your cart are no longer available in the requested quantity.",
+        outOfStockItems
+      });
+    }
+
     // calculate amount using items;
     let amount = await items.reduce(async (acc, item) => {
       const product = await Product.findById(item.product);
@@ -46,9 +68,21 @@ export const placeOrderCOD = async (req, res) => {
       deliveryOtp,
     });
 
-    // Increment orderCount for each product
+    // Increment orderCount and reduce stock for each product
     for (const item of items) {
-      await Product.findByIdAndUpdate(item.product, { $inc: { orderCount: 1 } });
+      await Product.findByIdAndUpdate(item.product, [
+        {
+          $set: {
+            orderCount: { $add: ["$orderCount", 1] },
+            stockQuantity: { $max: [0, { $subtract: ["$stockQuantity", item.quantity] }] },
+          }
+        },
+        {
+          $set: {
+            inStock: { $gt: ["$stockQuantity", 0] }
+          }
+        }
+      ]);
     }
 
     // Assign a random free captain (async)
@@ -116,10 +150,30 @@ export const updateOrderStatus = async (req, res) => {
       return res.status(400).json({ message: "Invalid status", success: false });
     }
 
-    const order = await Order.findByIdAndUpdate(id, { status }, { new: true });
+    const order = await Order.findByIdAndUpdate(id, { status }, { new: true }).populate("items.product");
 
     if (!order) {
       return res.status(404).json({ message: "Order not found", success: false });
+    }
+
+    // Restore stock if Cancelled or Rejected
+    if (status === 'Cancelled' || status === 'Rejected') {
+      for (const item of order.items) {
+        if (!item.product) continue;
+        const pId = item.product._id || item.product;
+        await Product.findByIdAndUpdate(pId, [
+          {
+            $set: {
+              stockQuantity: { $add: ["$stockQuantity", item.quantity] }
+            }
+          },
+          {
+            $set: {
+              inStock: { $gt: ["$stockQuantity", 0] }
+            }
+          }
+        ]);
+      }
     }
 
     // Send status update email asynchronously
