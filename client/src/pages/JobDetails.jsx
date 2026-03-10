@@ -3,33 +3,33 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
-import { MapPin, Clock, DollarSign, ArrowLeft, Send, Paperclip, CheckCircle } from "lucide-react";
+import { MapPin, Clock, IndianRupee, ArrowLeft, Send, Paperclip, CheckCircle } from "lucide-react";
 
 const JobDetails = () => {
-    const { id } = useParams();
-    const navigate = useNavigate();
-    const { axios, backendUrl } = useContext(AppContext);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { axios, backendUrl } = useContext(AppContext);
 
-    const [job, setJob] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
-    const [applied, setApplied] = useState(false);
+  const [job, setJob] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [applied, setApplied] = useState(false);
 
-    // Form State
-    const [formData, setFormData] = useState({
-        applicantName: "",
-        applicantEmail: "",
-        applicantPhone: "",
-        coverLetter: "",
-        resume: null
-    });
+  // Form State
+  const [formData, setFormData] = useState({
+    applicantName: "",
+    applicantEmail: "",
+    applicantPhone: "",
+    coverLetter: "",
+    resume: null
+  });
 
-    const fileInputRef = useRef(null);
+  const fileInputRef = useRef(null);
 
-    useEffect(() => {
-        const fetchJob = async () => {
-            try {
-                const { data } = await axios.get(`/api/career/${id}`);
+  useEffect(() => {
+    const fetchJob = async () => {
+      try {
+        const { data } = await axios.get(`/api/career/${id}`);
         if (data.success) {
           setJob(data.career);
         }
@@ -85,7 +85,7 @@ const JobDetails = () => {
         setApplied(true);
       }
     } catch (error) {
-       toast.error(error.response?.data?.message || "Failed to submit application");
+      toast.error(error.response?.data?.message || "Failed to submit application");
     } finally {
       setSubmitting(false);
     }
@@ -103,16 +103,16 @@ const JobDetails = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 pt-8">
-      <div className="max-w-4xl mx-auto px-6">
-        
+      <div className="max-w-5xl mx-auto px-6">
+
         {/* Back Link */}
         <Link to="/careers" className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors mb-8">
-           <ArrowLeft size={16} /> Back to Open Roles
+          <ArrowLeft size={16} /> Back to Open Roles
         </Link>
 
         {/* Banner */}
         {job.bannerUrl && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="w-full h-48 md:h-72 rounded-3xl overflow-hidden mb-10 shadow-xl"
           >
@@ -128,97 +128,130 @@ const JobDetails = () => {
           <div className="flex flex-wrap gap-4 text-sm font-bold bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm inline-flex">
             <span className="flex items-center gap-2 text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl"><MapPin size={16} className="text-indigo-500" /> {job.location}</span>
             <span className="flex items-center gap-2 text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl"><Clock size={16} className="text-indigo-500" /> {job.type}</span>
-            {job.salaryRange && <span className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1.5 rounded-xl"><DollarSign size={16} className="text-emerald-500" /> {job.salaryRange}</span>}
+            {job.salaryRange && <span className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1.5 rounded-xl"><IndianRupee size={16} className="text-emerald-500" /> {job.salaryRange}</span>}
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          
+        <div className="space-y-16">
           {/* Job Info */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="lg:col-span-2 space-y-10">
-            <div>
-              <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-4">About the Role</h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed whitespace-pre-wrap">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="space-y-12">
+            <div className="max-w-3xl">
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-6">About the Role</h3>
+              <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed whitespace-pre-wrap">
                 {job.description}
               </p>
             </div>
-            
+
             {job.requirements && job.requirements.length > 0 && (
               <div>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-6">Requirements</h3>
-                <ul className="space-y-4">
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-8">Requirements</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
                   {job.requirements.map((req, i) => (
-                    <li key={i} className="flex gap-4">
+                    <motion.li
+                      key={i}
+                      initial={{ opacity: 0, x: -10 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.05 }}
+                      className="flex gap-4 list-none"
+                    >
                       <div className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 mt-0.5">
                         <CheckCircle size={14} />
                       </div>
-                      <span className="text-slate-600 dark:text-slate-400 leading-relaxed">{req}</span>
-                    </li>
+                      <span className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">{req}</span>
+                    </motion.li>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
           </motion.div>
 
-          {/* Application Form */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="lg:col-span-1">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 border border-slate-200 dark:border-slate-800 shadow-xl sticky top-24">
+          {/* Application Form - Full Size */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3 }}
+            className="pt-12 border-t border-slate-200 dark:border-slate-800"
+          >
+            <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 md:p-16 border border-slate-200 dark:border-slate-800 shadow-2xl relative overflow-hidden">
+              {/* Decorative background element */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-3xl rounded-full" />
+
               {applied ? (
-                <div className="text-center py-10">
-                  <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <CheckCircle size={40} />
+                <div className="text-center py-10 relative z-10">
+                  <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-8">
+                    <CheckCircle size={48} />
                   </div>
-                  <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Application Sent!</h3>
-                  <p className="text-slate-500 dark:text-slate-400">Thanks for applying. Our HR team will review your profile and get back to you soon.</p>
-                  <Link to="/careers" className="mt-8 inline-block bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-white font-bold px-6 py-3 rounded-xl transition-colors">
-                    Browse More Jobs
+                  <h3 className="text-3xl font-black text-slate-900 dark:text-white mb-4">Application Successfully Sent!</h3>
+                  <p className="text-lg text-slate-500 dark:text-slate-400 max-w-md mx-auto">Thanks for applying. Our talent acquisition team will review your profile and get back to you within 48 hours.</p>
+                  <Link to="/careers" className="mt-10 inline-block bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black px-10 py-4 rounded-full transition-transform hover:scale-105 shadow-xl">
+                    Explore More Opportunities
                   </Link>
                 </div>
               ) : (
-                <>
-                  <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6">Apply Now</h3>
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                      <input type="text" name="applicantName" required value={formData.applicantName} onChange={handleInputChange} placeholder="Full Name" className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-white" />
-                    </div>
-                    <div>
-                      <input type="email" name="applicantEmail" required value={formData.applicantEmail} onChange={handleInputChange} placeholder="Email Address" className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-white" />
-                    </div>
-                    <div>
-                      <input type="tel" name="applicantPhone" required value={formData.applicantPhone} onChange={handleInputChange} placeholder="Phone Number" className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-white" />
-                    </div>
-                    <div>
-                      <textarea name="coverLetter" value={formData.coverLetter} onChange={handleInputChange} placeholder="Cover Letter (Optional)" rows={3} className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-white resize-none" />
-                    </div>
-                    
-                    {/* File Upload */}
-                    <div>
-                      <div 
-                        onClick={() => fileInputRef.current?.click()}
-                        className={`w-full border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-colors ${formData.resume ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/10' : 'border-slate-300 dark:border-slate-600 hover:border-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-                      >
-                        <Paperclip size={24} className={formData.resume ? "text-indigo-500 mb-2" : "text-slate-400 mb-2"} />
-                        <p className="text-sm font-bold text-slate-700 dark:text-slate-300 text-center">
-                          {formData.resume ? formData.resume.name : "Upload Resume (PDF)"}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-1">Max size: 5MB</p>
-                        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".pdf" className="hidden" />
+                <div className="relative z-10">
+                  <div className="max-w-2xl mx-auto text-center mb-12">
+                    <h3 className="text-3xl font-black text-slate-900 dark:text-white mb-4">Apply Now</h3>
+                    <p className="text-slate-500 dark:text-slate-400 leading-relaxed">Fill out the form below to start your journey with us. We can't wait to meet you!</p>
+                  </div>
+
+                  <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                      <div className="space-y-1">
+                        <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-4">Full Name</label>
+                        <input type="text" name="applicantName" required value={formData.applicantName} onChange={handleInputChange} placeholder="Your full name" className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl px-6 py-4 text-base focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-white transition-all" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-4">Email Address</label>
+                        <input type="email" name="applicantEmail" required value={formData.applicantEmail} onChange={handleInputChange} placeholder="your@email.com" className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl px-6 py-4 text-base focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-white transition-all" />
                       </div>
                     </div>
 
-                    <button 
-                      type="submit" 
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                      <div className="space-y-1">
+                        <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-4">Phone Number</label>
+                        <input type="tel" name="applicantPhone" required value={formData.applicantPhone} onChange={handleInputChange} placeholder="+91 00000 00000" className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl px-6 py-4 text-base focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-white transition-all" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-4">Resume (PDF)</label>
+                        <div
+                          onClick={() => fileInputRef.current?.click()}
+                          className={`w-full border-2 border-dashed rounded-2xl px-6 py-3.5 flex items-center justify-between cursor-pointer transition-all ${formData.resume ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/10' : 'border-slate-200 dark:border-slate-700 hover:border-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Paperclip size={20} className={formData.resume ? "text-indigo-500" : "text-slate-400"} />
+                            <p className="text-sm font-bold text-slate-700 dark:text-slate-300 truncate max-w-[150px]">
+                              {formData.resume ? formData.resume.name : "Select PDF Resume"}
+                            </p>
+                          </div>
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter shrink-0">MAX 5MB</span>
+                          <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".pdf" className="hidden" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1 mb-10">
+                      <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-4">Cover Letter (Optional)</label>
+                      <textarea name="coverLetter" value={formData.coverLetter} onChange={handleInputChange} placeholder="Tell us why you're a great fit..." rows={4} className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl px-6 py-4 text-base focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-white resize-none transition-all" />
+                    </div>
+
+                    <button
+                      type="submit"
                       disabled={submitting}
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-70"
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-5 rounded-2xl shadow-xl shadow-indigo-200 dark:shadow-none transition-all flex items-center justify-center gap-3 disabled:opacity-70 hover:scale-[1.01] active:scale-[0.99]"
                     >
-                      {submitting ? "Sending..." : "Submit Application"} <Send size={18} />
+                      {submitting ? "Processing Submission..." : "Submit Application"} <Send size={20} />
                     </button>
+
+                    <p className="text-center text-xs text-slate-400 mt-6 font-medium">By submitting, you agree to our privacy policy and terms of recruitment.</p>
                   </form>
-                </>
+                </div>
               )}
             </div>
           </motion.div>
         </div>
+
       </div>
     </div>
   );

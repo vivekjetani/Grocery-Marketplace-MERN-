@@ -579,3 +579,46 @@ export const sendCareerApplicationEmail = async (application, career, adminEmail
         throw error;
     }
 };
+
+// Send "Thank You" / Confirmation Email to Applicant
+export const sendApplicantConfirmationEmail = async (applicantEmail, applicantName, jobTitle) => {
+    try {
+        const transporter = await createTransporter();
+        const smtpSettings = await Smtp.findOne();
+
+        const content = `
+          <h2 style="color:#2563eb;">Thank You for Applying, ${applicantName}!</h2>
+          <p>We've successfully received your application for the <strong>${jobTitle}</strong> position.</p>
+          <p>Our team is excited to learn more about you. We typically review applications within 48 hours.</p>
+
+          <div style="margin:25px 0;padding:20px;background:#f0fafb;border-radius:12px;border:1px solid #cffafe;">
+            <h3 style="margin-top:0;color:#0891b2;font-size:16px;">What's Next? (Our Hiring Process)</h3>
+            <ol style="padding-left:20px;margin-bottom:0;color:#164e63;font-size:14px;line-height:1.6;">
+              <li><strong>Application Review:</strong> Our talent team reviews your profile and experience.</li>
+              <li><strong>First Interaction:</strong> A 30-minute introductory call to align on goals.</li>
+              <li><strong>Skill Assessment:</strong> A technical deep-dive or task related to the role.</li>
+              <li><strong>Final Sync:</strong> Meet the team and discuss cultural alignment.</li>
+              <li><strong>Offer:</strong> Receive an offer and join the Gramodaya family!</li>
+            </ol>
+          </div>
+
+          <p style="margin-top:20px;">We'll be in touch soon regardless of the outcome. Good luck!</p>
+          
+          <p style="margin-top:30px;font-size:12px;color:#94a3b8;">
+            Please do not reply to this automated email. For any queries, contact our support team.
+          </p>
+        `;
+
+        await transporter.sendMail({
+            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
+            to: applicantEmail,
+            subject: `Application Received: ${jobTitle} - Gramodaya`,
+            html: emailWrapper(content),
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to send applicant confirmation email:", error);
+    }
+};
+

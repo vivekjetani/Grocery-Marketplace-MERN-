@@ -12,7 +12,7 @@ import {
   Save,
   Users,
   MapPin,
-  DollarSign,
+  IndianRupee,
   Image as ImageIcon,
   CheckCircle,
   Clock,
@@ -347,7 +347,7 @@ const AdminCareers = () => {
                       <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400 mb-6 flex-1">
                         <p className="flex items-center gap-2"><MapPin size={14} /> {job.location}</p>
                         <p className="flex items-center gap-2"><Clock size={14} /> {job.type}</p>
-                        {job.salaryRange && <p className="flex items-center gap-2"><DollarSign size={14} /> {job.salaryRange}</p>}
+                        {job.salaryRange && <p className="flex items-center gap-2"><IndianRupee size={14} /> {job.salaryRange}</p>}
                       </div>
 
                       <div className="pt-4 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-between text-xs text-slate-500 font-medium">
@@ -527,7 +527,7 @@ const AdminCareers = () => {
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-black uppercase tracking-widest text-slate-400">Salary Range</label>
-                      <input type="text" name="salaryRange" value={formData.salaryRange} onChange={handleInputChange} className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-3 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="$80k - $120k" />
+                      <input type="text" name="salaryRange" value={formData.salaryRange} onChange={handleInputChange} className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-3 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="₹80k - ₹120k" />
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-black uppercase tracking-widest text-slate-400">Status</label>

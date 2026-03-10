@@ -1,7 +1,7 @@
 import Career from "../models/career.model.js";
 import Application from "../models/application.model.js";
 import Smtp from "../models/smtp.model.js";
-import { sendCareerApplicationEmail } from "../services/email.service.js";
+import { sendCareerApplicationEmail, sendApplicantConfirmationEmail } from "../services/email.service.js";
 import fs from "fs";
 import path from "path";
 
@@ -196,6 +196,9 @@ export const applyForCareer = async (req, res) => {
                 await sendCareerApplicationEmail(savedApplication, career, eligibleAdmins);
             }
         }
+
+        // Send confirmation email to applicant
+        await sendApplicantConfirmationEmail(applicantEmail, applicantName, career.title);
 
         return res.status(201).json({ success: true, message: "Application submitted successfully" });
     } catch (error) {
