@@ -15,14 +15,16 @@ const AddProduct = () => {
   const [unit, setUnit] = useState("kg");
   const [stockQuantity, setStockQuantity] = useState(0);
 
-  const handleFileChange = (index, file) => {
-    const updatedFiles = [...files];
-    updatedFiles[index] = file;
-    // Add a new slot if the last slot is filled
-    if (index === files.length - 1 && file) {
-      updatedFiles.push(null);
-    }
-    setFiles(updatedFiles);
+  const handleFileChange = (index, fileList) => {
+    if (!fileList || fileList.length === 0) return;
+
+    const newFiles = Array.from(fileList);
+    let updatedFiles = [...files];
+
+    updatedFiles.splice(index, 1, ...newFiles);
+
+    const validFiles = updatedFiles.filter(f => f !== null);
+    setFiles([...validFiles, null]);
   };
 
   const removeFileSlot = (index) => {
@@ -73,7 +75,7 @@ const AddProduct = () => {
             {files.map((file, index) => (
               <div key={index} className="relative group">
                 <label htmlFor={`image${index}`} className="block">
-                  <input onChange={(e) => handleFileChange(index, e.target.files[0])} accept="image/*" type="file" id={`image${index}`} hidden />
+                  <input onChange={(e) => handleFileChange(index, e.target.files)} accept="image/*" type="file" id={`image${index}`} hidden multiple />
                   <div className={`w-24 h-24 cursor-pointer rounded-xl border-2 border-dashed flex items-center justify-center overflow-hidden transition-all ${file ? 'border-indigo-500' : 'border-slate-300 dark:border-slate-700 hover:border-indigo-400'}`}>
                     {file ? (
                       <img className="w-full h-full object-cover" src={URL.createObjectURL(file)} alt="Upload preview" />
