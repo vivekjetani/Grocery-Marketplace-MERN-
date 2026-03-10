@@ -6,7 +6,8 @@ import Review from "../models/review.model.js";
 import Address from "../models/address.model.js";
 import Smtp from "../models/smtp.model.js";
 import Captain from "../models/captain.model.js";
-import { sendTestEmail, sendCaptainWelcomeEmail } from "../services/email.service.js";
+import Product from "../models/product.model.js";
+import { sendTestEmail, sendCaptainWelcomeEmail, sendLowStockAlertEmail } from "../services/email.service.js";
 import mongoose from "mongoose";
 // seller login :/api/seller/login
 export const sellerLogin = async (req, res) => {
@@ -297,6 +298,206 @@ export const deleteCaptain = async (req, res) => {
     res.status(200).json({ message: "Captain deleted successfully", success: true });
   } catch (error) {
     console.error("Error in deleteCaptain:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// =====================================================
+// DASHBOARD ANALYTICS APIs
+// =====================================================
+
+// GET /api/seller/dashboard/overview
+export const getDashboardOverview = async (req, res) => {
+  try {
+    const [totalUsers, totalProducts, totalOrders, revenueAgg, statusAgg] = await Promise.all([
+      User.countDocuments(),
+      Product.countDocuments(),
+      Order.countDocuments({ $or: [{ paymentType: "COD" }, { isPaid: true }] }),
+      Order.aggregate([
+        { $match: { $or: [{ paymentType: "COD" }, { isPaid: true }] } },
+        { $group: { _id: null, totalRevenue: { $sum: "$amount" } } }
+      ]),
+      Order.aggregate([
+        { $match: { $or: [{ paymentType: "COD" }, { isPaid: true }] } },
+        { $group: { _id: "$status", count: { $sum: 1 } } }
+      ]),
+    ]);
+
+    const totalRevenue = revenueAgg[0]?.totalRevenue || 0;
+    const statusMap = {};
+    statusAgg.forEach(s => { statusMap[s._id] = s.count; });
+
+    // Low stock products (qty <= 5)
+    const lowStockProducts = await Product.find({ stockQuantity: { $lte: 5 }, inStock: true }).select("name stockQuantity category");
+
+    res.status(200).json({
+      success: true,
+      overview: {
+        totalRevenue,
+        totalOrders,
+        totalUsers,
+        totalProducts,
+        statusBreakdown: statusMap,
+        lowStockCount: lowStockProducts.length,
+        lowStockProducts,
+      }
+    });
+  } catch (error) {
+    console.error("Error in getDashboardOverview:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// GET /api/seller/dashboard/sales-chart
+export const getSalesChartData = async (req, res) => {
+  try {
+    const days = parseInt(req.query.days) || 30;
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days + 1);
+    startDate.setHours(0, 0, 0, 0);
+
+    const orders = await Order.find({
+      $or: [{ paymentType: "COD" }, { isPaid: true }],
+      createdAt: { $gte: startDate },
+    }).select("amount createdAt status");
+
+    // Build day-by-day buckets
+    const buckets = {};
+    for (let i = 0; i < days; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - (days - 1 - i));
+      const key = d.toISOString().split("T")[0];
+      buckets[key] = { date: d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }), revenue: 0, orders: 0 };
+    }
+
+    orders.forEach(order => {
+      const key = new Date(order.createdAt).toISOString().split("T")[0];
+      if (buckets[key] && order.status !== "Cancelled") {
+        buckets[key].revenue += order.amount;
+        buckets[key].orders += 1;
+      }
+    });
+
+    res.status(200).json({ success: true, chartData: Object.values(buckets) });
+  } catch (error) {
+    console.error("Error in getSalesChartData:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// GET /api/seller/dashboard/category-distribution
+export const getCategoryDistribution = async (req, res) => {
+  try {
+    const data = await Product.aggregate([
+      { $group: { _id: "$category", productCount: { $sum: 1 }, totalOrders: { $sum: "$orderCount" } } },
+      { $sort: { totalOrders: -1 } },
+      { $project: { name: "$_id", productCount: 1, totalOrders: 1, _id: 0 } }
+    ]);
+    res.status(200).json({ success: true, categories: data });
+  } catch (error) {
+    console.error("Error in getCategoryDistribution:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// GET /api/seller/dashboard/product-trends
+export const getProductTrends = async (req, res) => {
+  try {
+    const products = await Product.find({})
+      .sort({ orderCount: -1 })
+      .limit(10)
+      .select("name category orderCount offerPrice price stockQuantity inStock averageRating numReviews image");
+
+    const trending = products.map(p => ({
+      _id: p._id,
+      name: p.name,
+      category: p.category,
+      orderCount: p.orderCount,
+      revenue: p.orderCount * p.offerPrice,
+      offerPrice: p.offerPrice,
+      price: p.price,
+      stockQuantity: p.stockQuantity,
+      inStock: p.inStock,
+      averageRating: p.averageRating,
+      numReviews: p.numReviews,
+      image: p.image?.[0],
+    }));
+
+    res.status(200).json({ success: true, products: trending });
+  } catch (error) {
+    console.error("Error in getProductTrends:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// GET /api/seller/dashboard/recent-activity
+export const getRecentActivity = async (req, res) => {
+  try {
+    const orders = await Order.find({ $or: [{ paymentType: "COD" }, { isPaid: true }] })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .populate("items.product", "name image category")
+      .lean();
+
+    // Enrich with user names
+    const userIds = [...new Set(orders.map(o => o.userId))];
+    const users = await User.find({ _id: { $in: userIds } }).select("name email").lean();
+    const userMap = {};
+    users.forEach(u => { userMap[u._id.toString()] = u; });
+
+    const enriched = orders.map(order => ({
+      _id: order._id,
+      userId: order.userId,
+      userName: userMap[order.userId]?.name || "Unknown",
+      userEmail: userMap[order.userId]?.email || "",
+      amount: order.amount,
+      status: order.status,
+      paymentType: order.paymentType,
+      itemCount: order.items?.length || 0,
+      createdAt: order.createdAt,
+    }));
+
+    res.status(200).json({ success: true, activities: enriched });
+  } catch (error) {
+    console.error("Error in getRecentActivity:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// POST /api/seller/dashboard/low-stock-alert
+export const sendLowStockAlert = async (req, res) => {
+  try {
+    const threshold = parseInt(req.body.threshold) || 5;
+    const lowStockProducts = await Product.find({ stockQuantity: { $lte: threshold } })
+      .select("name stockQuantity category");
+
+    if (lowStockProducts.length === 0) {
+      return res.status(200).json({ success: true, message: "No low-stock products found.", count: 0 });
+    }
+
+    const smtp = await Smtp.findOne();
+    if (!smtp || !smtp.isEnabled) {
+      return res.status(400).json({ success: false, message: "SMTP is not configured or disabled." });
+    }
+
+    // Only send to admins who are enabled AND have lowStock notifications on
+    const adminEmails = (smtp.admins || [])
+      .filter(a => a.isEnabled && a.notifications?.lowStock !== false)
+      .map(a => a.email);
+
+    if (adminEmails.length === 0) {
+      return res.status(400).json({ success: false, message: "No admin recipients have low-stock alerts enabled. Check SMTP → Admin Recipients settings." });
+    }
+
+    await sendLowStockAlertEmail(lowStockProducts, adminEmails);
+
+    res.status(200).json({
+      success: true,
+      message: `Low-stock alert sent to ${adminEmails.length} admin(s) for ${lowStockProducts.length} product(s).`,
+      count: lowStockProducts.length,
+    });
+  } catch (error) {
+    console.error("Error in sendLowStockAlert:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

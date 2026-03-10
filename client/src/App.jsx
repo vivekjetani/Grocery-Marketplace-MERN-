@@ -19,6 +19,7 @@ import ProfileOrders from "./pages/profile/ProfileOrders";
 import ProfileAddresses from "./pages/profile/ProfileAddresses";
 import SellerLogin from "./components/seller/SellerLogin";
 import SellerLayout from "./pages/seller/SellerLayout";
+import Dashboard from "./pages/seller/Dashboard";
 import AddProduct from "./pages/seller/AddProduct";
 import ProductList from "./pages/seller/ProductList";
 import Orders from "./pages/seller/Orders";
@@ -105,7 +106,8 @@ const App = () => {
               path="/seller"
               element={isSeller ? <PageTransition><SellerLayout /></PageTransition> : <PageTransition><SellerLogin /></PageTransition>}
             >
-              <Route index element={isSeller ? <AddProduct /> : null} />
+              <Route index element={isSeller ? <Dashboard /> : null} />
+              <Route path="add-product" element={isSeller ? <AddProduct /> : null} />
               <Route path="product-list" element={isSeller ? <ProductList /> : null} />
               <Route path="orders" element={isSeller ? <Orders /> : null} />
               <Route path="category-manager" element={isSeller ? <CategoryManager /> : null} />

@@ -21,7 +21,21 @@ const smtpSchema = new mongoose.Schema({
     admins: [
         {
             email: { type: String, required: true },
-            isEnabled: { type: Boolean, default: true }
+            isEnabled: { type: Boolean, default: true },
+            // ── Alert schedule ──────────────────────────────────
+            // frequency: 'daily' | 'alternate' | 'weekly'
+            frequency: { type: String, enum: ['daily', 'alternate', 'weekly'], default: 'daily' },
+            // Hour of day to send alert (0-23), default 8 → 8 AM
+            alertHour: { type: Number, min: 0, max: 23, default: 8 },
+            // Day of week for weekly frequency (0=Sun … 6=Sat), default 1=Monday
+            alertDay: { type: Number, min: 0, max: 6, default: 1 },
+            // ── Notification type toggles ──────────────────────
+            notifications: {
+                lowStock: { type: Boolean, default: true },  // low-stock alert
+                newOrder: { type: Boolean, default: true },  // new order placed
+                orderStatus: { type: Boolean, default: false },  // order status change
+                dailySummary: { type: Boolean, default: false },  // daily digest
+            }
         }
     ],
     fromEmail: {

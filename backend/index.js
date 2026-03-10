@@ -14,6 +14,7 @@ import reviewRoutes from "./routes/review.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
 import captainRoutes from "./routes/captain.routes.js";
 import startCleanupJob from "./cron/cleanup.js";
+import { startLowStockAlertJob } from "./cron/lowStockAlert.js";
 
 import { connectCloudinary } from "./config/cloudinary.js";
 
@@ -61,7 +62,8 @@ app.use("/api/captain", captainRoutes);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   connectDB();
-  startCleanupJob(); // Initialize daily cron job
+  startCleanupJob();          // Daily midnight: clean up unverified accounts
+  startLowStockAlertJob();   // Daily 8 AM: email admins about low-stock products
   console.log(`Server is running on port ${PORT}`);
   console.log(`FRONTEND_URL is set to: ${process.env.FRONTEND_URL}`);
 });

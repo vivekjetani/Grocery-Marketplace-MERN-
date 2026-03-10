@@ -468,3 +468,66 @@ export const sendVerificationEmail = async (toEmail, name, verificationToken) =>
     }
 };
 
+// Send Low-Stock Alert Email to Admin Recipients
+export const sendLowStockAlertEmail = async (products, adminEmails) => {
+    try {
+        const transporter = await createTransporter();
+        const smtpSettings = await Smtp.findOne();
+
+        const rows = products.map(p => `
+            <tr>
+                <td style="padding:10px 12px;border-bottom:1px solid #eee;font-weight:600;color:#1e293b;">${p.name}</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #eee;color:#64748b;">${p.category || "—"}</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #eee;text-align:center;">
+                    <span style="display:inline-block;padding:4px 10px;border-radius:20px;font-weight:700;font-size:13px;
+                        background:${p.stockQuantity === 0 ? '#fee2e2' : '#fef3c7'};
+                        color:${p.stockQuantity === 0 ? '#dc2626' : '#d97706'};">
+                        ${p.stockQuantity === 0 ? "OUT OF STOCK" : p.stockQuantity + " left"}
+                    </span>
+                </td>
+            </tr>
+        `).join("");
+
+        const content = `
+          <h2 style="color:#dc2626;">&#9888;&#65039; Low Stock Alert</h2>
+          <p>The following products are running critically low on stock and need immediate restocking.</p>
+
+          <div style="margin:20px 0;padding:16px;background:#fff7ed;border:2px solid #f97316;border-radius:10px;">
+            <p style="margin:0;font-size:14px;color:#9a3412;font-weight:700;">
+              &#128680; ${products.length} product${products.length > 1 ? "s" : ""} need${products.length === 1 ? "s" : ""} restocking
+            </p>
+          </div>
+
+          <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-top:16px;">
+            <thead>
+              <tr style="background:#f8fafc;">
+                <th style="padding:12px;text-align:left;border-bottom:2px solid #e2e8f0;color:#475569;">Product</th>
+                <th style="padding:12px;text-align:left;border-bottom:2px solid #e2e8f0;color:#475569;">Category</th>
+                <th style="padding:12px;text-align:center;border-bottom:2px solid #e2e8f0;color:#475569;">Stock Status</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+
+          <p style="margin-top:24px;font-size:13px;color:#64748b;">
+            Please update the stock levels in the admin panel as soon as possible to avoid stockouts.
+          </p>
+          <p style="margin-top:10px;">
+            <a href="${process.env.FRONTEND_URL}/seller/product-list" class="btn">Go to Product List</a>
+          </p>
+        `;
+
+        await transporter.sendMail({
+            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
+            to: adminEmails.join(","),
+            subject: `Low Stock Alert — ${products.length} product${products.length > 1 ? "s" : ""} need restocking`,
+            html: emailWrapper(content),
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to send low stock alert email:", error);
+        throw error;
+    }
+};
+

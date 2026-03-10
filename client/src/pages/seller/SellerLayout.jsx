@@ -10,7 +10,8 @@ const SellerLayout = () => {
   const location = useLocation();
 
   // Meaningful workflow order:
-  // 1. Orders     — urgent, first thing to check
+  // 0. Dashboard    — overview & analytics
+  // 1. Orders       — urgent, first thing to check
   // 2. Product List — quick overview of inventory
   // 3. Add Product  — add to inventory
   // 4. Categories   — manage taxonomy
@@ -18,9 +19,10 @@ const SellerLayout = () => {
   // 6. Captains     — delivery staff
   // 7. SMTP Settings — configuration, rarely touched
   const sidebarLinks = [
+    { name: "Dashboard", path: "/seller", icon: assets.order_icon },
     { name: "Orders", path: "/seller/orders", icon: assets.order_icon },
     { name: "Product List", path: "/seller/product-list", icon: assets.product_list_icon },
-    { name: "Add Product", path: "/seller", icon: assets.add_icon },
+    { name: "Add Product", path: "/seller/add-product", icon: assets.add_icon },
     { name: "Categories", path: "/seller/category-manager", icon: assets.add_icon },
     { name: "Users", path: "/seller/users", icon: assets.profile_icon },
     { name: "Captains", path: "/seller/captains", icon: assets.order_icon },
