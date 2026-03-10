@@ -28,7 +28,7 @@ router.get("/analytics/:id", authSeller, getProductAnalytics);
 
 // Category Product Management Routes
 router.delete("/delete/:id", authSeller, deleteProduct);
-router.post("/delete-by-category", authSeller, deleteProductsByCategory);
+router.delete("/delete-by-category", authSeller, deleteProductsByCategory);
 router.put("/transfer", authSeller, transferProducts);
 
 export default router;

@@ -345,7 +345,7 @@ const CategoryManager = () => {
                     <div className="flex justify-end mt-2">
                         <button
                             type="submit"
-                            disabled={loading || !newCategory.trim() || !categoryImage}
+                            disabled={loading}
                             className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:text-slate-500 text-white px-8 py-2.5 rounded-xl transition-all flex items-center gap-2 font-medium shadow-sm hover:shadow-indigo-500/20"
                         >
                             {loading ? (
@@ -628,6 +628,96 @@ const CategoryManager = () => {
                 confirmText="Delete Everything"
                 isLoading={isDeleting}
             />
+            {/* Rename Category Modal */}
+            {renameCategoryObj && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200 border border-slate-200 dark:border-slate-800">
+                        <div className="flex items-center gap-3 text-indigo-600 mb-4">
+                            <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-full">
+                                <Edit2 size={24} />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Rename Category</h3>
+                        </div>
+
+                        <div className="mb-6">
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">New Name</label>
+                            <input
+                                type="text"
+                                value={newRenameValue}
+                                onChange={(e) => setNewRenameValue(e.target.value)}
+                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none px-4 py-2.5 text-slate-900 dark:text-white focus:border-indigo-500"
+                                autoFocus
+                            />
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={confirmRename}
+                                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl transition-all shadow-sm hover:shadow-indigo-500/20"
+                            >
+                                Save Changes
+                            </button>
+                            <button
+                                onClick={() => setRenameCategoryObj(null)}
+                                className="flex-1 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors font-medium py-2.5 rounded-xl"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Transfer Products Modal */}
+            {showTransferModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200 border border-slate-200 dark:border-slate-800">
+                        <div className="flex items-center gap-3 text-indigo-600 mb-4">
+                            <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-full">
+                                <CornerUpRight size={24} />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Transfer Products</h3>
+                        </div>
+
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                            Moving <span className="font-bold text-slate-900 dark:text-white">{selectedProducts.length}</span> products from <span className="font-bold text-slate-900 dark:text-white text-indigo-500">{transferCategoryName}</span> to:
+                        </p>
+
+                        <div className="mb-6">
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Destination Category</label>
+                            <select
+                                value={transferDestination}
+                                onChange={(e) => setTransferDestination(e.target.value)}
+                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none px-4 py-2.5 text-slate-900 dark:text-white focus:border-indigo-500 appearance-none"
+                            >
+                                <option value="">Select a category...</option>
+                                {categories
+                                    .filter(c => c.text !== transferCategoryName)
+                                    .map(c => (
+                                        <option key={c._id} value={c.text}>{c.text}</option>
+                                    ))
+                                }
+                            </select>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleTransferSelected}
+                                disabled={!transferDestination}
+                                className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white font-medium py-2.5 rounded-xl transition-all shadow-sm hover:shadow-indigo-500/20"
+                            >
+                                Transfer Now
+                            </button>
+                            <button
+                                onClick={() => { setShowTransferModal(false); setTransferDestination(""); }}
+                                className="flex-1 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors font-medium py-2.5 rounded-xl"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
