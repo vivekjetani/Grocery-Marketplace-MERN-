@@ -16,6 +16,7 @@ import {
     Search,
     X,
 } from "lucide-react";
+import ConfirmModal from "../../components/ConfirmModal";
 
 const Captains = () => {
     const { axios } = useContext(AppContext);
@@ -24,6 +25,9 @@ const Captains = () => {
     const [submitting, setSubmitting] = useState(false);
     const [form, setForm] = useState({ name: "", email: "", password: "" });
     const [captainSearch, setCaptainSearch] = useState("");
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [captainToDelete, setCaptainToDelete] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchCaptains = async () => {
         setLoading(true);
@@ -65,19 +69,29 @@ const Captains = () => {
         }
     };
 
-    const handleDelete = async (id, name) => {
-        if (!window.confirm(`Delete captain "${name}"? This cannot be undone.`)) return;
+    const handleDelete = async () => {
+        if (!captainToDelete) return;
         try {
-            const { data } = await axios.delete(`/api/seller/captain/${id}`);
+            setIsDeleting(true);
+            const { data } = await axios.delete(`/api/seller/captain/${captainToDelete.id}`);
             if (data.success) {
                 toast.success("Captain deleted");
-                setCaptains((prev) => prev.filter((c) => c._id !== id));
+                setCaptains((prev) => prev.filter((c) => c._id !== captainToDelete.id));
             } else {
                 toast.error(data.message);
             }
         } catch (error) {
             toast.error(error.response?.data?.message || error.message);
+        } finally {
+            setIsDeleting(false);
+            setShowDeleteConfirm(false);
+            setCaptainToDelete(null);
         }
+    };
+
+    const confirmDelete = (id, name) => {
+        setCaptainToDelete({ id, name });
+        setShowDeleteConfirm(true);
     };
 
     return (
@@ -264,7 +278,7 @@ const Captains = () => {
                                             {captain.isActive ? <><CheckCircle size={11} /> Active</> : <><XCircle size={11} /> Inactive</>}
                                         </div>
                                         <button
-                                            onClick={() => handleDelete(captain._id, captain.name)}
+                                            onClick={() => confirmDelete(captain._id, captain.name)}
                                             className="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition"
                                         >
                                             <Trash2 size={16} />
@@ -275,6 +289,16 @@ const Captains = () => {
                     )}
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={handleDelete}
+                title="Delete Captain"
+                message={`Are you sure you want to delete "${captainToDelete?.name}"? This action cannot be undone and they will no longer be able to deliver orders.`}
+                confirmText="Delete Captain"
+                isLoading={isDeleting}
+            />
         </div>
     );
 };

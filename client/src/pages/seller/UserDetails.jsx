@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 import { Users as UsersIcon, Star, ShoppingBag, DollarSign, Calendar, Package, ArrowLeft, Mail, Trash2, AlertTriangle } from "lucide-react";
+import ConfirmModal from "../../components/ConfirmModal";
 
 const UserDetails = () => {
     const { id } = useParams();
@@ -230,51 +231,15 @@ const UserDetails = () => {
             </div>
 
             {/* Delete Confirmation Modal */}
-            {showDeleteConfirm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-white dark:bg-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-700"
-                    >
-                        <div className="flex items-center gap-4 mb-4 text-red-500">
-                            <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
-                                <AlertTriangle size={24} />
-                            </div>
-                            <h3 className="text-xl font-black text-slate-900 dark:text-white">Delete User Account</h3>
-                        </div>
-                        <p className="text-slate-600 dark:text-slate-300 mb-6">
-                            Are you sure you want to delete <span className="font-bold">{user.name}</span>? This will permanently remove their account, addresses, and reviews. Their order history will be preserved for store records. This action cannot be undone.
-                        </p>
-                        <div className="flex gap-3 justify-end">
-                            <button
-                                onClick={() => setShowDeleteConfirm(false)}
-                                disabled={isDeleting}
-                                className="px-5 py-2.5 rounded-xl font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleDeleteUser}
-                                disabled={isDeleting}
-                                className="px-5 py-2.5 rounded-xl font-bold bg-red-500 hover:bg-red-600 text-white transition-colors flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                            >
-                                {isDeleting ? (
-                                    <>
-                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                        Deleting...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Trash2 size={18} />
-                                        Delete Forever
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </motion.div>
-                </div>
-            )}
+            <ConfirmModal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={handleDeleteUser}
+                title="Delete User Account"
+                message={`Are you sure you want to delete ${user.name}? This will permanently remove their account, addresses, and reviews. Their order history will be preserved for store records. This action cannot be undone.`}
+                confirmText="Delete Forever"
+                isLoading={isDeleting}
+            />
         </div>
     );
 };

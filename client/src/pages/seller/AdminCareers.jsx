@@ -24,6 +24,7 @@ import {
   Check,
   X
 } from "lucide-react";
+import ConfirmModal from "../../components/ConfirmModal";
 
 const AdminCareers = () => {
   const { axios, backendUrl } = useContext(AppContext);
@@ -43,6 +44,11 @@ const AdminCareers = () => {
 
   // Applications State
   const [applications, setApplications] = useState([]);
+
+  // Confirm Modal State
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch Data
   const fetchJobs = async () => {
@@ -219,17 +225,27 @@ const AdminCareers = () => {
     }
   };
 
-  const deleteJob = async (id) => {
-    if (!window.confirm("Are you sure? This deletes the job and all its applications.")) return;
+  const deleteJob = async () => {
+    if (!jobToDelete) return;
     try {
-      const { data } = await axios.delete(`/api/career/delete/${id}`);
+      setIsDeleting(true);
+      const { data } = await axios.delete(`/api/career/delete/${jobToDelete}`);
       if (data.success) {
         toast.success("Job deleted");
         fetchJobs();
       }
     } catch (err) {
       toast.error("Failed to delete job");
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+      setJobToDelete(null);
     }
+  };
+
+  const confirmDelete = (id) => {
+    setJobToDelete(id);
+    setShowDeleteConfirm(true);
   };
 
   const updateAppStatus = async (id, status) => {
@@ -331,7 +347,7 @@ const AdminCareers = () => {
                         <button onClick={() => openEditModal(job)} className="p-2 bg-white/90 dark:bg-slate-800/90 text-indigo-600 dark:text-indigo-400 rounded-xl hover:bg-white transition-colors backdrop-blur-sm">
                           <Edit2 size={16} />
                         </button>
-                        <button onClick={() => deleteJob(job._id)} className="p-2 bg-white/90 dark:bg-slate-800/90 text-rose-600 dark:text-rose-400 rounded-xl hover:bg-white transition-colors backdrop-blur-sm">
+                        <button onClick={() => confirmDelete(job._id)} className="p-2 bg-white/90 dark:bg-slate-800/90 text-rose-600 dark:text-rose-400 rounded-xl hover:bg-white transition-colors backdrop-blur-sm">
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -618,6 +634,16 @@ const AdminCareers = () => {
           </div>
         )}
       </AnimatePresence>
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={deleteJob}
+        title="Delete Job"
+        message="Are you sure you want to delete this job opening? This will permanently remove the job and all submitted applications. This action cannot be undone."
+        confirmText="Delete Job"
+        isLoading={isDeleting}
+      />
     </div>
   );
 };

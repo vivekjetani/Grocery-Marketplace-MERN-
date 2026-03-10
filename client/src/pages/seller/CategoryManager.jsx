@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 import { Plus, Trash2, FolderPlus, Edit2, ChevronDown, ChevronUp, PackageOpen, CheckSquare, Square, CornerUpRight, GripVertical, Search, X } from "lucide-react";
+import ConfirmModal from "../../components/ConfirmModal";
 
 const CategoryManager = () => {
     const { axios, categories, fetchCategories, products, fetchProducts } = useAppContext();
@@ -30,6 +31,10 @@ const CategoryManager = () => {
     const [draggedCategoryIdx, setDraggedCategoryIdx] = useState(null);
     const [dragOverCategoryIdx, setDragOverCategoryIdx] = useState(null);
     const [categorySearch, setCategorySearch] = useState("");
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null); // { type: 'category' | 'product', id: string, name: string }
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
 
     useEffect(() => {
         if (fetchProducts && products.length === 0) {
@@ -81,44 +86,49 @@ const CategoryManager = () => {
         }
     };
 
-    const confirmDelete = async () => {
-        // Standard delete (empty category)
-        if (deleteCategoryId) {
-            try {
-                const { data } = await axios.delete(`/api/category/delete/${deleteCategoryId}`);
+    const confirmDeleteItems = async () => {
+        if (!itemToDelete) return;
+
+        setIsDeleting(true);
+        try {
+            if (itemToDelete.type === 'category') {
+                const { data } = await axios.delete(`/api/category/delete/${itemToDelete.id}`);
                 if (data.success) {
                     toast.success(data.message);
                     await fetchCategories();
                 }
-            } catch (error) {
-                toast.error(error.response?.data?.message || "Failed to delete category");
-            } finally {
-                setDeleteCategoryId(null);
-            }
-        }
-
-        // Advanced delete (category with products) -> Delete All Products option
-        if (categoryToDelete) {
-            try {
+            } else if (itemToDelete.type === 'product') {
+                const { data } = await axios.delete(`/api/product/delete/${itemToDelete.id}`);
+                if (data.success) {
+                    toast.success(data.message);
+                    if (fetchProducts) await fetchProducts();
+                }
+            } else if (itemToDelete.type === 'bulk') {
+                // Advanced delete (category with products) -> Delete All Products option
                 // First delete all products in this category
                 const productRes = await axios.delete('/api/product/delete-by-category', {
-                    data: { category: categoryToDelete.text }
+                    data: { category: itemToDelete.name }
                 });
 
                 if (productRes.data.success) {
                     // Then delete the category itself
-                    const { data } = await axios.delete(`/api/category/delete/${categoryToDelete._id}`);
+                    const { data } = await axios.delete(`/api/category/delete/${itemToDelete.id}`);
                     if (data.success) {
                         toast.success(`Deleted category and all its products`);
                         await fetchCategories();
                         if (fetchProducts) await fetchProducts();
                     }
                 }
-            } catch (error) {
-                toast.error(error.response?.data?.message || "Failed to delete category and products");
-            } finally {
-                setCategoryToDelete(null);
             }
+        } catch (error) {
+            toast.error(error.response?.data?.message || `Failed to delete ${itemToDelete.type}`);
+        } finally {
+            setIsDeleting(false);
+            setShowDeleteConfirm(false);
+            setShowBulkDeleteConfirm(false);
+            setItemToDelete(null);
+            setCategoryToDelete(null);
+            setDeleteCategoryId(null);
         }
     };
 
@@ -253,17 +263,9 @@ const CategoryManager = () => {
         }
     };
 
-    const handleDeleteProduct = async (productId) => {
-        if (!window.confirm("Are you sure you want to delete this product?")) return;
-        try {
-            const { data } = await axios.delete(`/api/product/delete/${productId}`);
-            if (data.success) {
-                toast.success(data.message);
-                if (fetchProducts) await fetchProducts();
-            }
-        } catch (error) {
-            toast.error("Failed to delete product");
-        }
+    const handleDeleteProduct = (productId, productName) => {
+        setItemToDelete({ type: 'product', id: productId, name: productName });
+        setShowDeleteConfirm(true);
     };
 
     const handleTransferSelected = async () => {
@@ -519,7 +521,7 @@ const CategoryManager = () => {
                                                                                 </div>
                                                                             </div>
                                                                             <button
-                                                                                onClick={(e) => { e.stopPropagation(); handleDeleteProduct(product._id); }}
+                                                                                onClick={(e) => { e.stopPropagation(); handleDeleteProduct(product._id, product.name); }}
                                                                                 className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                                                                 title="Delete Product"
                                                                             >
@@ -541,140 +543,16 @@ const CategoryManager = () => {
                 </div>
             </div >
 
-            {/* Custom Delete Confirmation Modal */}
-            {
-                deleteCategoryId && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in fade-in zoom-in duration-200">
-                            <div className="flex items-center gap-3 text-red-600 mb-4">
-                                <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full">
-                                    <Trash2 size={24} />
-                                </div>
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Delete Category</h3>
-                            </div>
-                            <p className="text-slate-600 dark:text-slate-400 mb-6 font-medium">
-                                Are you sure you want to delete this category? This action cannot be undone.
-                            </p>
-                            <div className="flex justify-end gap-3 font-medium">
-                                <button
-                                    onClick={() => setDeleteCategoryId(null)}
-                                    className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={confirmDelete}
-                                    className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white shadow-sm hover:shadow-red-500/20 transition-all font-medium"
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-
-            {/* Rename Category Modal */}
-            {
-                renameCategoryObj && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in fade-in zoom-in duration-200">
-                            <div className="flex items-center gap-3 text-indigo-600 dark:text-indigo-400 mb-4">
-                                <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-full">
-                                    <Edit2 size={24} />
-                                </div>
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Rename Category</h3>
-                            </div>
-                            <div className="mb-6">
-                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">New Category Name</label>
-                                <input
-                                    type="text"
-                                    value={newRenameValue}
-                                    onChange={(e) => setNewRenameValue(e.target.value)}
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none px-4 py-2.5 text-slate-900 dark:text-white focus:border-indigo-500"
-                                    autoFocus
-                                />
-                            </div>
-                            <div className="flex justify-end gap-3 font-medium">
-                                <button
-                                    onClick={() => setRenameCategoryObj(null)}
-                                    className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={confirmRename}
-                                    disabled={!newRenameValue.trim() || newRenameValue.trim() === renameCategoryObj.text}
-                                    className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white shadow-sm hover:shadow-indigo-500/20 transition-all font-medium flex items-center gap-2"
-                                >
-                                    Save Changes
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-
-            {/* Transfer Products Modal */}
-            {
-                showTransferModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-                            <div className="flex items-center gap-3 text-indigo-600 dark:text-indigo-400 mb-4">
-                                <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-full">
-                                    <CornerUpRight size={24} />
-                                </div>
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Transfer Products</h3>
-                            </div>
-
-                            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 mb-6 border border-slate-200 dark:border-slate-700">
-                                <p className="text-sm text-slate-600 dark:text-slate-400">
-                                    You are about to move <strong className="text-indigo-600 dark:text-indigo-400">{selectedProducts.length}</strong> products out of <strong className="text-slate-900 dark:text-white">{transferCategoryName}</strong>.
-                                    Please select their new destination category below:
-                                </p>
-                            </div>
-
-                            <div className="mb-6">
-                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">Destination Category</label>
-                                <select
-                                    value={transferDestination}
-                                    onChange={(e) => setTransferDestination(e.target.value)}
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none px-4 py-3 text-slate-900 dark:text-white focus:border-indigo-500 appearance-none cursor-pointer"
-                                >
-                                    <option value="" disabled>Select a destination...</option>
-                                    {categories
-                                        .filter(c => c.text !== transferCategoryName) // Don't allow transferring to the same category
-                                        .map(category => (
-                                            <option key={category._id} value={category.text}>
-                                                {category.text}
-                                            </option>
-                                        ))
-                                    }
-                                </select>
-                                {categories.length <= 1 && (
-                                    <p className="text-xs text-red-500 mt-2">You need at least two categories to perform a transfer.</p>
-                                )}
-                            </div>
-
-                            <div className="flex justify-end gap-3 font-medium">
-                                <button
-                                    onClick={() => { setShowTransferModal(false); setTransferDestination(""); }}
-                                    className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleTransferSelected}
-                                    disabled={!transferDestination}
-                                    className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white shadow-sm hover:shadow-indigo-500/20 transition-all font-medium flex items-center gap-2"
-                                >
-                                    Transfer {selectedProducts.length} Items
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
+            {/* Delete Product/Empty Category Confirmation Modal */}
+            <ConfirmModal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={confirmDeleteItems}
+                title={itemToDelete?.type === 'category' ? "Delete Category" : "Delete Product"}
+                message={`Are you sure you want to delete this ${itemToDelete?.type}? This action cannot be undone.`}
+                confirmText="Delete"
+                isLoading={isDeleting}
+            />
 
             {/* Advanced Delete Category Modal (When Products Exist) */}
             {
@@ -718,11 +596,7 @@ const CategoryManager = () => {
                                 </div>
 
                                 <button
-                                    onClick={() => {
-                                        if (window.confirm(`Are you absolutely sure? This will PERMANENTLY delete ${getProductsForCategory(categoryToDelete.text).length} products.`)) {
-                                            confirmDelete();
-                                        }
-                                    }}
+                                    onClick={() => setShowBulkDeleteConfirm(true)}
                                     className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white shadow-sm hover:shadow-red-500/20 font-medium transition-all"
                                 >
                                     <Trash2 size={18} />
@@ -740,7 +614,21 @@ const CategoryManager = () => {
                     </div>
                 )
             }
-        </div >
+
+            {/* Bulk Delete Confirmation Modal */}
+            <ConfirmModal
+                isOpen={showBulkDeleteConfirm}
+                onClose={() => setShowBulkDeleteConfirm(false)}
+                onConfirm={() => {
+                    setItemToDelete({ type: 'bulk', id: categoryToDelete?._id, name: categoryToDelete?.text });
+                    confirmDeleteItems();
+                }}
+                title="PERMANENT Bulk Delete"
+                message={`Are you absolutely sure? This will PERMANENTLY delete the category "${categoryToDelete?.text}" AND all ${categoryToDelete ? getProductsForCategory(categoryToDelete.text).length : 0} products within it. This action is irreversible.`}
+                confirmText="Delete Everything"
+                isLoading={isDeleting}
+            />
+        </div>
     );
 };
 

@@ -3,6 +3,7 @@ import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { Ticket, MoreVertical } from "lucide-react";
+import ConfirmModal from "../../components/ConfirmModal";
 
 const Coupons = () => {
     const { axios } = useAppContext();
@@ -15,6 +16,9 @@ const Coupons = () => {
     const [usageLoading, setUsageLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [usageSearchTerm, setUsageSearchTerm] = useState("");
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [couponToDelete, setCouponToDelete] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const [formData, setFormData] = useState({
         code: "",
@@ -67,17 +71,27 @@ const Coupons = () => {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this coupon?")) return;
+    const handleDelete = async () => {
+        if (!couponToDelete) return;
         try {
-            const { data } = await axios.delete(`/api/coupon/${id}`);
+            setIsDeleting(true);
+            const { data } = await axios.delete(`/api/coupon/${couponToDelete}`);
             if (data.success) {
                 toast.success(data.message);
                 fetchCoupons();
             }
         } catch (error) {
             toast.error("Failed to delete coupon");
+        } finally {
+            setIsDeleting(false);
+            setShowDeleteConfirm(false);
+            setCouponToDelete(null);
         }
+    };
+
+    const confirmDelete = (id) => {
+        setCouponToDelete(id);
+        setShowDeleteConfirm(true);
     };
 
     const handleToggleStatus = async (id) => {
@@ -204,7 +218,7 @@ const Coupons = () => {
                                     View Usage
                                 </button>
                                 <button
-                                    onClick={() => handleDelete(coupon._id)}
+                                    onClick={() => confirmDelete(coupon._id)}
                                     className="px-3 py-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors"
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -390,6 +404,16 @@ const Coupons = () => {
                     </div>
                 )}
             </AnimatePresence>
+
+            <ConfirmModal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={handleDelete}
+                title="Delete Coupon"
+                message="Are you sure you want to delete this coupon? This action cannot be undone and customers will no longer be able to use this discount code."
+                confirmText="Delete Coupon"
+                isLoading={isDeleting}
+            />
         </div>
     );
 };

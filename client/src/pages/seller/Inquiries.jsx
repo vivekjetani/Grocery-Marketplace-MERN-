@@ -6,6 +6,7 @@ import {
     MessageSquare, Mail, User, Clock, Trash2,
     ChevronRight, ExternalLink, Inbox, Search
 } from "lucide-react";
+import ConfirmModal from "../../components/ConfirmModal";
 
 const Inquiries = () => {
     const { axios } = useContext(AppContext);
@@ -13,6 +14,9 @@ const Inquiries = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedId, setSelectedId] = useState(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [idToDelete, setIdToDelete] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchInquiries = async () => {
         try {
@@ -27,18 +31,28 @@ const Inquiries = () => {
 
     useEffect(() => { fetchInquiries(); }, []);
 
-    const handleDelete = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this inquiry?")) return;
+    const handleDelete = async () => {
+        if (!idToDelete) return;
         try {
-            const { data } = await axios.delete(`/api/seller/inquiry/${id}`);
+            setIsDeleting(true);
+            const { data } = await axios.delete(`/api/seller/inquiry/${idToDelete}`);
             if (data.success) {
                 toast.success("Inquiry deleted");
-                setInquiries(prev => prev.filter(inq => inq._id !== id));
-                if (selectedId === id) setSelectedId(null);
+                setInquiries(prev => prev.filter(inq => inq._id !== idToDelete));
+                if (selectedId === idToDelete) setSelectedId(null);
             }
         } catch (err) {
             toast.error("Failed to delete");
+        } finally {
+            setIsDeleting(false);
+            setShowDeleteConfirm(false);
+            setIdToDelete(null);
         }
+    };
+
+    const confirmDelete = (id) => {
+        setIdToDelete(id);
+        setShowDeleteConfirm(true);
     };
 
     const filtered = inquiries.filter(inq =>
@@ -90,8 +104,8 @@ const Inquiries = () => {
                                     key={inq._id}
                                     onClick={() => setSelectedId(inq._id)}
                                     className={`w-full text-left p-5 rounded-2xl transition-all border ${selectedId === inq._id
-                                            ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none"
-                                            : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:border-indigo-300"
+                                        ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none"
+                                        : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:border-indigo-300"
                                         }`}
                                 >
                                     <div className="flex justify-between items-start gap-3">
@@ -141,7 +155,7 @@ const Inquiries = () => {
                                         </div>
                                     </div>
                                     <button
-                                        onClick={() => handleDelete(selected._id)}
+                                        onClick={() => confirmDelete(selected._id)}
                                         className="p-3 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all"
                                     >
                                         <Trash2 size={20} />
@@ -184,7 +198,17 @@ const Inquiries = () => {
                     </AnimatePresence>
                 </div>
             </div>
-        </motion.div>
+
+            <ConfirmModal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={handleDelete}
+                title="Delete Inquiry"
+                message="Are you sure you want to delete this contact inquiry? This action cannot be undone."
+                confirmText="Delete Inquiry"
+                isLoading={isDeleting}
+            />
+        </motion.div >
     );
 };
 
