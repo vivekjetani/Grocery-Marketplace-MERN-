@@ -1,1 +1,1 @@
-# Grocery-Marketplace-MERN-
+# Gramodaya (formerly Grocery-Marketplace-MERN-)

@@ -61,8 +61,8 @@ const AdminCard = ({ admin, idx, onChange, onRemove }) => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
             className={`rounded-2xl border overflow-hidden transition-all ${admin.isEnabled
-                    ? "border-indigo-100 dark:border-indigo-900/40"
-                    : "border-slate-200 dark:border-slate-700 opacity-60"
+                ? "border-indigo-100 dark:border-indigo-900/40"
+                : "border-slate-200 dark:border-slate-700 opacity-60"
                 }`}
         >
             {/* ── Card header row ── */}
@@ -72,8 +72,8 @@ const AdminCard = ({ admin, idx, onChange, onRemove }) => {
                     type="button"
                     onClick={() => set("isEnabled", !admin.isEnabled)}
                     className={`w-10 h-10 rounded-xl shrink-0 flex items-center justify-center transition-all ${admin.isEnabled
-                            ? "bg-indigo-600 text-white"
-                            : "bg-slate-100 dark:bg-slate-700 text-slate-400"
+                        ? "bg-indigo-600 text-white"
+                        : "bg-slate-100 dark:bg-slate-700 text-slate-400"
                         }`}
                 >
                     {admin.isEnabled ? <Bell size={16} /> : <BellOff size={16} />}
@@ -143,8 +143,8 @@ const AdminCard = ({ admin, idx, onChange, onRemove }) => {
                                             type="button"
                                             onClick={() => set("frequency", f.value)}
                                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${admin.frequency === f.value
-                                                    ? "bg-indigo-600 text-white border-indigo-600"
-                                                    : "bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-indigo-400"
+                                                ? "bg-indigo-600 text-white border-indigo-600"
+                                                : "bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-indigo-400"
                                                 }`}
                                         >
                                             <span>{f.icon}</span> {f.label}
@@ -203,8 +203,8 @@ const AdminCard = ({ admin, idx, onChange, onRemove }) => {
                                                 type="button"
                                                 onClick={() => setNotif(key, !on)}
                                                 className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all ${on
-                                                        ? "border-transparent bg-white dark:bg-slate-700 shadow-sm"
-                                                        : "border-slate-100 dark:border-slate-700 bg-transparent opacity-50"
+                                                    ? "border-transparent bg-white dark:bg-slate-700 shadow-sm"
+                                                    : "border-slate-100 dark:border-slate-700 bg-transparent opacity-50"
                                                     }`}
                                             >
                                                 <div className="flex items-center gap-3">
@@ -322,8 +322,8 @@ const SmtpSettings = () => {
                 <div
                     onClick={() => handleChange({ target: { name: "isEnabled", type: "checkbox", checked: !settings.isEnabled } })}
                     className={`cursor-pointer px-4 py-2 rounded-2xl flex items-center gap-2 font-bold text-sm transition-all duration-300 ${settings.isEnabled
-                            ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700"
-                            : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                        ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-500"
                         }`}
                 >
                     {settings.isEnabled ? <Bell size={18} /> : <BellOff size={18} />}
@@ -374,7 +374,7 @@ const SmtpSettings = () => {
                             <div className="space-y-2">
                                 <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">From Name</label>
                                 <input type="text" name="fromEmail" value={settings.fromEmail} onChange={handleChange}
-                                    placeholder="Grocery Marketplace" required
+                                    placeholder="Gramodaya" required
                                     className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
                             </div>
                             <button type="submit" disabled={loading}

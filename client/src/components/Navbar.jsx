@@ -59,7 +59,7 @@ const Navbar = () => {
           whileTap={{ scale: 0.95 }}
           className="text-2xl font-bold text-gradient dark:text-gradient-dark origin-left"
         >
-          Grocery App
+          Gramodaya
         </motion.h2>
       </Link>
 

@@ -28,7 +28,7 @@ const CaptainLayout = ({ captain, onLogout, children }) => {
                     </div>
                     <div>
                         <h1 className="text-lg font-black text-white leading-none">Captain Portal</h1>
-                        <p className="text-xs text-slate-400">Grocery Marketplace</p>
+                        <p className="text-xs text-slate-400">Gramodaya</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-4">

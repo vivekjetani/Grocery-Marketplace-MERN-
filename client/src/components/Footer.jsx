@@ -14,7 +14,7 @@ const Footer = () => {
         <div className="flex flex-wrap justify-between gap-12 md:gap-6">
           <div className="max-w-80">
             <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent mb-4">
-              Grocery App
+              Gramodaya
             </h1>
             <p className="text-sm leading-relaxed">
               We're bringing you the freshest produce with the most vibey shopping experience.
@@ -87,7 +87,7 @@ const Footer = () => {
         <hr className="border-slate-200 dark:border-slate-800 my-8" />
 
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between text-xs font-medium">
-          <p>© {new Date().getFullYear()} Grocery App. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Gramodaya. All rights reserved.</p>
           <ul className="flex items-center gap-6">
             <li><a href="#" className="hover:text-primary dark:hover:text-primary-dark transition-colors">Privacy</a></li>
             <li><a href="#" className="hover:text-primary dark:hover:text-primary-dark transition-colors">Terms</a></li>

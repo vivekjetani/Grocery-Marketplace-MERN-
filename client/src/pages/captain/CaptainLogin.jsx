@@ -42,7 +42,7 @@ const CaptainLogin = ({ onLogin }) => {
                         <Truck size={28} className="text-white" />
                     </div>
                     <h1 className="text-3xl font-black text-white tracking-tight">Captain Portal</h1>
-                    <p className="text-slate-400 mt-1">Grocery Marketplace Delivery</p>
+                    <p className="text-slate-400 mt-1">Gramodaya Delivery</p>
                 </div>
 
                 {/* Card */}

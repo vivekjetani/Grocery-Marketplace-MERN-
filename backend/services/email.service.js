@@ -29,17 +29,17 @@ export const sendTestEmail = async (toEmail) => {
         const info = await transporter.sendMail({
             from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
             to: toEmail,
-            subject: "Test Email from Grocery Marketplace",
+            subject: "Test Email from Gramodaya",
             html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
           <div style="text-align: center; margin-bottom: 20px;">
             <h2 style="color: #4CAF50;">SMTP Setup Successful!</h2>
           </div>
           <p>Hello,</p>
-          <p>This is a test email sent from the Grocery Marketplace Admin Panel to verify that your SMTP settings are working correctly.</p>
+          <p>This is a test email sent from the Gramodaya Admin Panel to verify that your SMTP settings are working correctly.</p>
           <p>If you received this email, your email notifications are now active.</p>
           <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-          <p style="font-size: 12px; color: #888; text-align: center;">Grocery Marketplace Admin</p>
+          <p style="font-size: 12px; color: #888; text-align: center;">Gramodaya Admin</p>
         </div>
       `,
         });
@@ -70,13 +70,13 @@ const emailWrapper = (content) => `
 <body>
     <div class="container">
         <div class="header">
-            <h1>Grocery Marketplace</h1>
+            <h1>Gramodaya</h1>
         </div>
         <div class="content">
             ${content}
         </div>
         <div class="footer">
-            <p>&copy; ${new Date().getFullYear()} Grocery Marketplace. All rights reserved.</p>
+            <p>&copy; ${new Date().getFullYear()} Gramodaya. All rights reserved.</p>
         </div>
     </div>
 </body>
@@ -271,7 +271,7 @@ export const sendCaptainWelcomeEmail = async (captain, plainPassword) => {
 
         const content = `
           <h2>Welcome to the Delivery Team, ${captain.name}!</h2>
-          <p>You have been added as a delivery captain on Grocery Marketplace.</p>
+          <p>You have been added as a delivery captain on Gramodaya.</p>
           <p>Here are your login credentials for the captain portal:</p>
           <div style="margin: 20px 0; padding: 20px; background: #f4f7f6; border-radius: 8px; border-left: 4px solid #4CAF50;">
             <p style="margin: 8px 0;"><strong>Login URL:</strong> <a href="${process.env.FRONTEND_URL}/captain">${process.env.FRONTEND_URL}/captain</a></p>
@@ -285,7 +285,7 @@ export const sendCaptainWelcomeEmail = async (captain, plainPassword) => {
         await transporter.sendMail({
             from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
             to: captain.email,
-            subject: `Welcome to Grocery Marketplace - Captain Login Details`,
+            subject: `Welcome to Gramodaya - Captain Login Details`,
             html: emailWrapper(content),
         });
     } catch (error) {
@@ -447,7 +447,7 @@ export const sendVerificationEmail = async (toEmail, name, verificationToken) =>
         const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
 
         const content = `
-          <h2>Welcome to Grocery Marketplace, ${name}!</h2>
+          <h2>Welcome to Gramodaya, ${name}!</h2>
           <p>Thank you for registering. Please verify your email address to activate your account.</p>
           <div style="text-align: center; margin: 30px 0;">
               <a href="${verificationUrl}" class="btn" style="padding: 12px 24px; font-size: 16px;">Verify Email Address</a>
