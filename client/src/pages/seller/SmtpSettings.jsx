@@ -22,6 +22,7 @@ const NOTIF_TYPES = [
     { key: "orderStatus", label: "Order Status Change", desc: "Confirmed, delivered, cancelled…", color: "#10b981" },
     { key: "dailySummary", label: "Daily Summary", desc: "Day-end revenue & order digest", color: "#3b82f6" },
     { key: "careerApplication", label: "Career Applications", desc: "When a new job application is submitted", color: "#ec4899" },
+    { key: "contactInquiry", label: "Contact Inquiries", desc: "When a customer submits a contact form", color: "#10b981" },
 ];
 
 // ─── Helpers ───────────────────────────────────────────────────────
@@ -31,7 +32,7 @@ const defaultAdmin = (email = "") => ({
     frequency: "daily",
     alertHour: 8,
     alertDay: 1,
-    notifications: { lowStock: true, newOrder: true, orderStatus: false, dailySummary: false, careerApplication: true },
+    notifications: { lowStock: true, newOrder: true, orderStatus: false, dailySummary: false, careerApplication: true, contactInquiry: true },
 });
 
 const fmt12h = (h) => {

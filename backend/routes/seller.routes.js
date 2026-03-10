@@ -19,6 +19,13 @@ import {
   getProductTrends,
   getRecentActivity,
   sendLowStockAlert,
+  // Store Info
+  getStoreInfo,
+  updateStoreInfo,
+  // Inquiries
+  submitInquiry,
+  getInquiries,
+  deleteInquiry,
 } from "../controller/seller.controller.js";
 import { authSeller } from "../middlewares/authSeller.js";
 const router = express.Router();
@@ -43,6 +50,13 @@ router.get("/dashboard/category-distribution", authSeller, getCategoryDistributi
 router.get("/dashboard/product-trends", authSeller, getProductTrends);
 router.get("/dashboard/recent-activity", authSeller, getRecentActivity);
 router.post("/dashboard/low-stock-alert", authSeller, sendLowStockAlert);
+// Store Info (public read, protected write)
+router.get("/store-info", getStoreInfo);
+router.put("/store-info", authSeller, updateStoreInfo);
+// Inquiries (public submit, protected manage)
+router.post("/inquiry", submitInquiry);
+router.get("/inquiries", authSeller, getInquiries);
+router.delete("/inquiry/:id", authSeller, deleteInquiry);
 
 export default router;
 

@@ -26,6 +26,8 @@ import CategoryManager from "./pages/seller/CategoryManager";
 import Users from "./pages/seller/Users";
 import UserDetails from "./pages/seller/UserDetails";
 import SmtpSettings from "./pages/seller/SmtpSettings";
+import StoreInfo from "./pages/seller/StoreInfo";
+import Inquiries from "./pages/seller/Inquiries";
 import Captains from "./pages/seller/Captains";
 import CaptainLogin from "./pages/captain/CaptainLogin";
 import CaptainLayout from "./pages/captain/CaptainLayout";
@@ -38,6 +40,11 @@ import Coupons from "./pages/seller/Coupons";
 import AdminCareers from "./pages/seller/AdminCareers";
 import Careers from "./pages/Careers";
 import JobDetails from "./pages/JobDetails";
+import About from "./pages/About";
+import HelpCenter from "./pages/HelpCenter";
+import SafetyInfo from "./pages/SafetyInfo";
+import Cancellation from "./pages/Cancellation";
+import ContactUs from "./pages/ContactUs";
 
 const App = () => {
   const location = useLocation();
@@ -100,6 +107,11 @@ const App = () => {
             <Route path="/review" element={<PageTransition><ReviewFromEmail /></PageTransition>} />
             <Route path="/careers" element={<PageTransition><Careers /></PageTransition>} />
             <Route path="/careers/:id" element={<PageTransition><JobDetails /></PageTransition>} />
+            <Route path="/about" element={<PageTransition><About /></PageTransition>} />
+            <Route path="/help-center" element={<PageTransition><HelpCenter /></PageTransition>} />
+            <Route path="/safety-info" element={<PageTransition><SafetyInfo /></PageTransition>} />
+            <Route path="/cancellation" element={<PageTransition><Cancellation /></PageTransition>} />
+            <Route path="/contact-us" element={<PageTransition><ContactUs /></PageTransition>} />
 
             <Route path="/profile" element={<PageTransition><ProfileLayout /></PageTransition>}>
               <Route index element={<ProfileInfo />} />
@@ -122,6 +134,8 @@ const App = () => {
               <Route path="careers" element={isSeller ? <AdminCareers /> : null} />
               <Route path="coupons" element={isSeller ? <Coupons /> : null} />
               <Route path="smtp" element={isSeller ? <SmtpSettings /> : null} />
+              <Route path="store-info" element={isSeller ? <StoreInfo /> : null} />
+              <Route path="inquiries" element={isSeller ? <Inquiries /> : null} />
             </Route>
           </Routes>
         </AnimatePresence>

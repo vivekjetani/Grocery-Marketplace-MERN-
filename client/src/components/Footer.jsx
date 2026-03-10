@@ -22,21 +22,21 @@ const Footer = () => {
             </p>
             <div className="flex items-center gap-4 mt-6">
               {/* Instagram */}
-              <a href="#" className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center hover:bg-pink-500 hover:text-white transition-all hover:scale-110 shadow-sm">
+              <a href="https://www.instagram.com/mr_vicky_jetani/" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center hover:bg-pink-500 hover:text-white transition-all hover:scale-110 shadow-sm">
                 <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                   <path d="M7.75 2A5.75 5.75 0 002 7.75v8.5A5.75 5.75 0 007.75 22h8.5A5.75 5.75 0 0022 16.25v-8.5A5.75 5.75 0 0016.25 2h-8.5zM4.5 7.75A3.25 3.25 0 017.75 4.5h8.5a3.25 3.25 0 013.25 3.25v8.5a3.25 3.25 0 01-3.25 3.25h-8.5a3.25 3.25 0 01-3.25-3.25v-8.5zm9.5 1a4 4 0 11-4 4 4 4 0 014-4zm0 1.5a2.5 2.5 0 102.5 2.5 2.5 2.5 0 00-2.5-2.5zm3.5-.75a.75.75 0 11.75-.75.75.75 0 01-.75.75z" />
                 </svg>
               </a>
-              {/* Twitter/X */}
-              <a href="#" className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-900 dark:hover:bg-white dark:hover:text-slate-900 hover:text-white transition-all hover:scale-110 shadow-sm">
+              {/* LinkedIn */}
+              <a href="https://www.linkedin.com/in/jet-vivek-jetani/" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center hover:bg-[#0077b5] hover:text-white transition-all hover:scale-110 shadow-sm">
                 <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                  <path d="M22 5.92a8.2 8.2 0 01-2.36.65A4.1 4.1 0 0021.4 4a8.27 8.27 0 01-2.6 1A4.14 4.14 0 0016 4a4.15 4.15 0 00-4.15 4.15c0 .32.04.64.1.94a11.75 11.75 0 01-8.52-4.32 4.14 4.14 0 001.29 5.54A4.1 4.1 0 013 10v.05a4.15 4.15 0 003.33 4.07 4.12 4.12 0 01-1.87.07 4.16 4.16 0 003.88 2.89A8.33 8.33 0 012 19.56a11.72 11.72 0 006.29 1.84c7.55 0 11.68-6.25 11.68-11.67 0-.18 0-.35-.01-.53A8.18 8.18 0 0022 5.92z" />
+                  <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
                 </svg>
               </a>
-              {/* TikTok */}
-              <a href="#" className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all hover:scale-110 shadow-sm">
-                <svg className="w-5 h-5 fill-current" viewBox="0 0 448 512">
-                  <path d="M448 209.91a210.06 210.06 0 0 1-122.77-39.25V349.38A162.55 162.55 0 1 1 185 188.31v89.89a74.62 74.62 0 1 0 52.23 71.18V0l88 0a121.18 121.18 0 0 0 1.86 22.17h0A122.18 122.18 0 0 0 381 102.39a121.43 121.43 0 0 0 67 20.14Z" />
+              {/* WhatsApp */}
+              <a href="https://wa.me/916351051238" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center hover:bg-[#25D366] hover:text-white transition-all hover:scale-110 shadow-sm">
+                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                  <path d="M12.004 2c-5.523 0-10 4.477-10 10 0 1.763.456 3.42 1.254 4.86l-1.254 4.544 4.654-1.221c1.405.748 3.003 1.177 4.7 1.177 5.523 0 10-4.477 10-10s-4.477-10-10-10zm.006 18c-1.534 0-2.973-.42-4.209-1.147l-.302-.178-2.756.723.738-2.673-.195-.31c-.811-1.285-1.282-2.812-1.282-4.444 0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8zm4.686-6.426c-.256-.128-1.516-.748-1.751-.833-.235-.085-.406-.128-.577.128-.171.256-.662.833-.812.914-.149.081-.299.091-.427.027-.128-.064-.541-.199-1.031-.636-.381-.339-.638-.758-.713-.886-.075-.128-.008-.198.056-.261.058-.057.128-.149.192-.224.064-.075.085-.128.128-.214.043-.085.021-.16-.011-.224-.032-.064-.406-.983-.556-1.346-.146-.355-.295-.307-.406-.312s-.234-.006-.362-.006c-.128 0-.341.048-.521.245-.179.197-.683.667-.683 1.625 0 .958.697 1.882.793 2.01.096.128 1.371 2.094 3.322 2.936.464.2.825.32 1.107.41.466.148.889.127 1.225.077.375-.056 1.15-.47 1.312-.924.162-.454.162-.844.113-.924-.048-.08-.179-.128-.435-.256z" />
                 </svg>
               </a>
             </div>
@@ -45,21 +45,18 @@ const Footer = () => {
           <div>
             <p className="text-sm font-bold tracking-widest text-slate-800 dark:text-slate-200 mb-6">COMPANY</p>
             <ul className="flex flex-col gap-3 text-sm">
-              <li><a href="#" className="hover:text-primary dark:hover:text-primary-dark transition-colors">About</a></li>
+              <li><Link to="/about" className="hover:text-primary dark:hover:text-primary-dark transition-colors">About</Link></li>
               <li><Link to="/careers" className="hover:text-primary dark:hover:text-primary-dark transition-colors">Careers 🚀</Link></li>
-              <li><a href="#" className="hover:text-primary dark:hover:text-primary-dark transition-colors">Press</a></li>
-              <li><a href="#" className="hover:text-primary dark:hover:text-primary-dark transition-colors">Blog</a></li>
-              <li><a href="#" className="hover:text-primary dark:hover:text-primary-dark transition-colors">Partners</a></li>
             </ul>
           </div>
 
           <div>
             <p className="text-sm font-bold tracking-widest text-slate-800 dark:text-slate-200 mb-6">SUPPORT</p>
             <ul className="flex flex-col gap-3 text-sm">
-              <li><a href="#" className="hover:text-primary dark:hover:text-primary-dark transition-colors">Help Center</a></li>
-              <li><a href="#" className="hover:text-primary dark:hover:text-primary-dark transition-colors">Safety Info</a></li>
-              <li><a href="#" className="hover:text-primary dark:hover:text-primary-dark transition-colors">Cancellation</a></li>
-              <li><a href="#" className="hover:text-primary dark:hover:text-primary-dark transition-colors">Contact Us</a></li>
+              <li><Link to="/help-center" className="hover:text-primary dark:hover:text-primary-dark transition-colors">Help Center</Link></li>
+              <li><Link to="/safety-info" className="hover:text-primary dark:hover:text-primary-dark transition-colors">Safety Info</Link></li>
+              <li><Link to="/cancellation" className="hover:text-primary dark:hover:text-primary-dark transition-colors">Cancellation</Link></li>
+              <li><Link to="/contact-us" className="hover:text-primary dark:hover:text-primary-dark transition-colors">Contact Us</Link></li>
             </ul>
           </div>
 

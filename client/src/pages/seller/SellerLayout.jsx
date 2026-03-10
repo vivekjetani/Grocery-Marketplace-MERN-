@@ -17,7 +17,9 @@ import {
   Moon,
   Sun,
   LogOut,
-  Briefcase
+  Briefcase,
+  MapPin,
+  Send
 } from "lucide-react";
 
 const SellerLayout = () => {
@@ -43,6 +45,8 @@ const SellerLayout = () => {
     { name: "Careers", path: "/seller/careers", icon: Briefcase },
     { name: "Coupons", path: "/seller/coupons", icon: Ticket },
     { name: "Captains", path: "/seller/captains", icon: Truck },
+    { name: "Inquiries", path: "/seller/inquiries", icon: Send },
+    { name: "Store Info", path: "/seller/store-info", icon: MapPin },
     { name: "SMTP Settings", path: "/seller/smtp", icon: Mail },
   ];
 

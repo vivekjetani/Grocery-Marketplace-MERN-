@@ -7,7 +7,9 @@ import Address from "../models/address.model.js";
 import Smtp from "../models/smtp.model.js";
 import Captain from "../models/captain.model.js";
 import Product from "../models/product.model.js";
-import { sendTestEmail, sendCaptainWelcomeEmail, sendLowStockAlertEmail } from "../services/email.service.js";
+import StoreInfo from "../models/storeInfo.model.js";
+import Inquiry from "../models/inquiry.model.js";
+import { sendTestEmail, sendCaptainWelcomeEmail, sendLowStockAlertEmail, sendContactInquiryEmail, sendUserContactConfirmationEmail } from "../services/email.service.js";
 import mongoose from "mongoose";
 // seller login :/api/seller/login
 export const sellerLogin = async (req, res) => {
@@ -496,3 +498,99 @@ export const sendLowStockAlert = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+// GET /api/seller/store-info  (public – no auth needed)
+export const getStoreInfo = async (req, res) => {
+  try {
+    let info = await StoreInfo.findOne();
+    if (!info) info = await StoreInfo.create({});
+    res.status(200).json({ success: true, storeInfo: info });
+  } catch (error) {
+    console.error("Error in getStoreInfo:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// PUT /api/seller/store-info  (protected)
+export const updateStoreInfo = async (req, res) => {
+  try {
+    const { address, phone, whatsapp, email, openHours, closedDays, mapLink, cancellationPolicy, safetyPolicy } = req.body;
+    let info = await StoreInfo.findOne();
+    if (info) {
+      Object.assign(info, { address, phone, whatsapp, email, openHours, closedDays, mapLink, cancellationPolicy, safetyPolicy });
+      await info.save();
+    } else {
+      info = await StoreInfo.create({ address, phone, whatsapp, email, openHours, closedDays, mapLink, cancellationPolicy, safetyPolicy });
+    }
+    res.status(200).json({ success: true, message: "Store info updated", storeInfo: info });
+  } catch (error) {
+    console.error("Error in updateStoreInfo:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// POST /api/seller/inquiry (public)
+export const submitInquiry = async (req, res) => {
+  try {
+    const { name, email, message } = req.body;
+    if (!name || !email || !message) {
+      return res.status(400).json({ message: "All fields are required", success: false });
+    }
+
+    const inquiry = await Inquiry.create({ name, email, message });
+
+    // Background notifications
+    (async () => {
+      try {
+        // 1. Send confirmation to user
+        await sendUserContactConfirmationEmail(email, name);
+
+        // 2. Notify enabled admins
+        const smtp = await Smtp.findOne();
+        if (smtp && smtp.isEnabled) {
+          const adminEmails = (smtp.admins || [])
+            .filter(a => a.isEnabled && a.notifications?.contactInquiry !== false)
+            .map(a => a.email);
+
+          if (adminEmails.length > 0) {
+            await sendContactInquiryEmail(inquiry, adminEmails);
+          }
+        }
+      } catch (err) {
+        console.error("Inquiry notification error:", err);
+      }
+    })();
+
+    res.status(201).json({ success: true, message: "Inquiry submitted successfully", inquiry });
+  } catch (error) {
+    console.error("Error in submitInquiry:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// GET /api/seller/inquiries (protected)
+export const getInquiries = async (req, res) => {
+  try {
+    const inquiries = await Inquiry.find().sort({ createdAt: -1 });
+    res.status(200).json({ success: true, inquiries });
+  } catch (error) {
+    console.error("Error in getInquiries:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// DELETE /api/seller/inquiry/:id (protected)
+export const deleteInquiry = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid ID", success: false });
+    }
+    await Inquiry.findByIdAndDelete(id);
+    res.status(200).json({ success: true, message: "Inquiry deleted" });
+  } catch (error) {
+    console.error("Error in deleteInquiry:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+

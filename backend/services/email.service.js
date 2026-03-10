@@ -622,3 +622,72 @@ export const sendApplicantConfirmationEmail = async (applicantEmail, applicantNa
     }
 };
 
+// Send Contact Inquiry Notification to Admin
+export const sendContactInquiryEmail = async (inquiry, adminEmails) => {
+    try {
+        const transporter = await createTransporter();
+        const smtpSettings = await Smtp.findOne();
+
+        const content = `
+          <h2 style="color:#10b981;">📩 New Contact Inquiry Received</h2>
+          <p>You have a new message from the Gramodaya contact form.</p>
+
+          <div style="margin:20px 0;padding:20px;background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #10b981;border-radius:6px;">
+            <p style="margin:5px 0;"><strong>Name:</strong> ${inquiry.name}</p>
+            <p style="margin:5px 0;"><strong>Email:</strong> <a href="mailto:${inquiry.email}">${inquiry.email}</a></p>
+            <p style="margin:10px 0 5px;"><strong>Message:</strong></p>
+            <div style="background:#fff;padding:10px;border-radius:4px;border:1px solid #e2e8f0;white-space:pre-wrap;">${inquiry.message}</div>
+          </div>
+
+          <p style="margin-top:30px;font-size:13px;color:#64748b;">
+            To manage this inquiry, <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/seller/inquiries">log in to the Admin Dashboard</a>.
+          </p>
+        `;
+
+        await transporter.sendMail({
+            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
+            to: adminEmails.join(","),
+            subject: `New Inquiry: ${inquiry.name}`,
+            html: emailWrapper(content),
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to send contact inquiry email:", error);
+    }
+};
+
+// Send "Thank You" Confirmation to User who contacted
+export const sendUserContactConfirmationEmail = async (userEmail, userName) => {
+    try {
+        const transporter = await createTransporter();
+        const smtpSettings = await Smtp.findOne();
+
+        const content = `
+          <h2 style="color:#10b981;">We've Received Your Message!</h2>
+          <p>Hello ${userName},</p>
+          <p>Thank you for reaching out to Gramodaya. We've received your inquiry and our team will get back to you within 24 hours.</p>
+          
+          <div style="margin:25px 0;padding:20px;background:#f0fdf4;border-radius:12px;border:1px solid #dcfce7;">
+            <p style="margin:0;color:#166534;font-size:14px;line-height:1.6;">
+              "At Gramodaya, every community voice matters. Whether it's a question about our village-sourced products or a feedback for improvement, we're here to listen."
+            </p>
+          </div>
+
+          <p>Have a great day!</p>
+          <p>— Team Gramodaya</p>
+        `;
+
+        await transporter.sendMail({
+            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
+            to: userEmail,
+            subject: `We've received your inquiry - Gramodaya`,
+            html: emailWrapper(content),
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to send user contact confirmation email:", error);
+    }
+};
+
