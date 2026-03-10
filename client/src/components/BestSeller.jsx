@@ -4,7 +4,7 @@ import { useAppContext } from "../context/AppContext";
 import axios from "axios";
 
 const BestSeller = () => {
-  const { backendUrl } = useAppContext();
+  const { backendUrl, products } = useAppContext();
   const [bestSellers, setBestSellers] = useState([]);
 
   useEffect(() => {
@@ -19,7 +19,7 @@ const BestSeller = () => {
       }
     };
     fetchBestSellers();
-  }, []);
+  }, [products]);
 
   return (
     <div className="mt-20">
@@ -33,8 +33,8 @@ const BestSeller = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 items-center justify-center">
-        {bestSellers.map((product) => (
-          <ProductCard key={product._id} product={product} />
+        {bestSellers.map((item) => (
+          <ProductCard key={item._id} product={item} />
         ))}
       </div>
     </div>

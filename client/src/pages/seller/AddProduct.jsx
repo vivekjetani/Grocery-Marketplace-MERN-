@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { X, Plus } from "lucide-react";
 
 const AddProduct = () => {
-  const { axios, categories: contextCategories } = useContext(AppContext);
+  const { axios, categories: contextCategories, fetchProducts } = useContext(AppContext);
   const [files, setFiles] = useState([null]); // Start with one upload slot
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -53,6 +53,7 @@ const AddProduct = () => {
       const { data } = await axios.post("/api/product/add-product", formData);
       if (data.success) {
         toast.success(data.message);
+        fetchProducts();
         setName("");
         setDescription("");
         setCategory("");

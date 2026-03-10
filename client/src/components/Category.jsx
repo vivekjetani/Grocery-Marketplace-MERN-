@@ -26,7 +26,7 @@ const Category = () => {
             </h2>
 
             <motion.div
-                key={categories.length}
+                key={categories.map(c => c._id).join(',')}
                 variants={container}
                 initial="hidden"
                 whileInView="show"
@@ -36,7 +36,7 @@ const Category = () => {
                 {categories.map((category, index) => (
                     <motion.div
                         variants={item}
-                        key={index}
+                        key={category._id || index}
                         whileHover={{ scale: 1.05, y: -5 }}
                         whileTap={{ scale: 0.95 }}
                         className="group cursor-pointer p-6 rounded-2xl flex flex-col items-center justify-center shadow-sm hover:shadow-xl dark:shadow-none dark:hover:shadow-primary/20 transition-all border border-transparent hover:border-white/50 backdrop-blur-sm relative overflow-hidden"

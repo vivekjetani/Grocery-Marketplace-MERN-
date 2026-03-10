@@ -24,6 +24,9 @@ export const AppContextProvider = ({ children }) => {
     return false;
   });
 
+  // Cross-tab synchronization channel
+  const [syncChannel] = useState(() => new BroadcastChannel("app_state_sync"));
+
   // Handle Auth Interceptor
   useEffect(() => {
     const interceptor = axios.interceptors.response.use(
@@ -79,11 +82,12 @@ export const AppContextProvider = ({ children }) => {
   };
 
   // fetch products
-  const fetchProducts = async () => {
+  const fetchProducts = async (broadcast = true) => {
     try {
       const { data } = await axios.get("/api/product/list");
       if (data.success) {
         setProducts(data.products);
+        if (broadcast) syncChannel.postMessage("REFRESH_PRODUCTS");
       } else {
         toast.error(data.message);
       }
@@ -93,7 +97,7 @@ export const AppContextProvider = ({ children }) => {
   };
 
   // fetch and unify categories
-  const fetchCategories = async () => {
+  const fetchCategories = async (broadcast = true) => {
     try {
       const { data } = await axios.get("/api/category/list");
       if (data.success) {
@@ -107,6 +111,7 @@ export const AppContextProvider = ({ children }) => {
           isDynamic: true,
         }));
         setCategories(dynamicCategories);
+        if (broadcast) syncChannel.postMessage("REFRESH_CATEGORIES");
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -171,6 +176,19 @@ export const AppContextProvider = ({ children }) => {
     fetchProducts();
     fetchUser();
   }, []);
+
+  // Listen for sync signals from other tabs
+  useEffect(() => {
+    const handleSync = (event) => {
+      if (event.data === "REFRESH_PRODUCTS") fetchProducts(false);
+      if (event.data === "REFRESH_CATEGORIES") fetchCategories(false);
+    };
+
+    syncChannel.addEventListener("message", handleSync);
+    return () => {
+      syncChannel.removeEventListener("message", handleSync);
+    };
+  }, [syncChannel]);
 
   // update database cart items
   useEffect(() => {

@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 
 const RecommendedProducts = ({ category, excludeId }) => {
     const [recommended, setRecommended] = useState([]);
-    const { user } = useAppContext();
+    const { user, products } = useAppContext();
 
     useEffect(() => {
         const fetchRecommended = async () => {
@@ -22,7 +22,7 @@ const RecommendedProducts = ({ category, excludeId }) => {
             }
         };
         fetchRecommended();
-    }, [category, excludeId, user?._id]);
+    }, [category, excludeId, user?._id, products]);
 
     if (recommended.length === 0) return null;
 
@@ -38,8 +38,8 @@ const RecommendedProducts = ({ category, excludeId }) => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                {recommended.map((product) => (
-                    <ProductCard key={product._id} product={product} />
+                {recommended.map((item) => (
+                    <ProductCard key={item._id} product={item} />
                 ))}
             </div>
         </div>

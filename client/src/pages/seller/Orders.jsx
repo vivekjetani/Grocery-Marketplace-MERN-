@@ -6,7 +6,7 @@ import { Package, Calendar, User, MapPin, CreditCard, CheckCircle, Clock } from 
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
-  const { axios } = useContext(AppContext);
+  const { axios, fetchProducts } = useContext(AppContext);
 
   const fetchOrders = async () => {
     try {
@@ -28,6 +28,7 @@ const Orders = () => {
       if (data.success) {
         toast.success("Order status updated and mail sent!");
         fetchOrders();
+        fetchProducts();
       } else {
         toast.error(data.message);
       }
