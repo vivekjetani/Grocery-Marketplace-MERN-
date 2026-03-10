@@ -4,8 +4,7 @@ import Order from "../models/order.model.js";
 // add product :/api/product/add
 export const addProduct = async (req, res) => {
   try {
-    const { name, price, offerPrice, description, category, unit } = req.body;
-    // const image = req.files?.map((file) => `/uploads/${file.filename}`);
+    const { name, price, offerPrice, description, category, unit, stockQuantity } = req.body;
     const image = req.files?.map((file) => file.filename);
     if (
       !name ||
@@ -23,6 +22,7 @@ export const addProduct = async (req, res) => {
       });
     }
 
+    const qty = parseInt(stockQuantity) || 0;
     const product = new Product({
       name,
       price,
@@ -31,6 +31,8 @@ export const addProduct = async (req, res) => {
       category,
       unit,
       image,
+      stockQuantity: qty,
+      inStock: qty > 0,
     });
 
     const savedProduct = await product.save();
@@ -46,6 +48,26 @@ export const addProduct = async (req, res) => {
     return res
       .status(500)
       .json({ success: false, message: "Server error while adding product" });
+  }
+};
+
+// update stock quantity :/api/product/update-stock
+export const updateStockQuantity = async (req, res) => {
+  try {
+    const { id, stockQuantity } = req.body;
+    const qty = Math.max(0, parseInt(stockQuantity) || 0);
+    const product = await Product.findByIdAndUpdate(
+      id,
+      { stockQuantity: qty },
+      { new: true }
+    );
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+    res.status(200).json({ success: true, product, message: "Stock quantity updated successfully" });
+  } catch (error) {
+    console.error("Error in updateStockQuantity:", error);
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
 };
 

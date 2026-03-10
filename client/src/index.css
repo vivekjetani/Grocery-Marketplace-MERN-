@@ -107,4 +107,20 @@
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-indigo-400;
   }
+
+  /* Out-of-stock marquee animations */
+  @keyframes marquee-oos {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-33.333%); }
+  }
+  @keyframes marquee-oos-reverse {
+    0%   { transform: translateX(-33.333%); }
+    100% { transform: translateX(0); }
+  }
+  .animate-marquee-oos {
+    animation: marquee-oos linear infinite;
+  }
+  .animate-marquee-oos-reverse {
+    animation: marquee-oos-reverse linear infinite;
+  }
 }

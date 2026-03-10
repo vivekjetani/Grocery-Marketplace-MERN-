@@ -13,6 +13,7 @@ const AddProduct = () => {
   const [price, setPrice] = useState("");
   const [offerPrice, setOfferPrice] = useState("");
   const [unit, setUnit] = useState("kg");
+  const [stockQuantity, setStockQuantity] = useState(0);
 
   const handleFileChange = (index, file) => {
     const updatedFiles = [...files];
@@ -40,6 +41,7 @@ const AddProduct = () => {
       formData.append("price", price);
       formData.append("offerPrice", offerPrice);
       formData.append("unit", unit);
+      formData.append("stockQuantity", stockQuantity);
 
       const validFiles = files.filter(f => f !== null);
       for (let i = 0; i < validFiles.length; i++) {
@@ -55,6 +57,7 @@ const AddProduct = () => {
         setPrice("");
         setOfferPrice("");
         setUnit("kg");
+        setStockQuantity(0);
         setFiles([null]);
       }
       else toast.error(data.message);
@@ -134,6 +137,21 @@ const AddProduct = () => {
               <option value="500g">Per 500g</option>
             </select>
           </div>
+        </div>
+        <div className="flex flex-col gap-1 max-w-md">
+          <label className="text-base font-medium text-slate-900 dark:text-white" htmlFor="stock-quantity">
+            Stock Quantity
+          </label>
+          <input
+            id="stock-quantity"
+            type="number"
+            min="0"
+            value={stockQuantity}
+            onChange={(e) => setStockQuantity(Math.max(0, parseInt(e.target.value) || 0))}
+            placeholder="0"
+            className="outline-none md:py-2.5 py-2 px-3 rounded border border-slate-500/40 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 dark:placeholder-slate-500 max-w-[160px]"
+          />
+          <p className="text-[10px] text-slate-400">How many units are currently in stock.</p>
         </div>
         <button className="px-8 py-2.5 bg-indigo-500 text-white font-medium rounded hover:bg-indigo-600 transition-colors">ADD</button>
       </form>

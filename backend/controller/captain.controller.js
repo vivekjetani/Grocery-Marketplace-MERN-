@@ -131,6 +131,17 @@ export const respondToOrder = async (req, res) => {
             order.status = "In Progress";
             await order.save();
 
+            // Deduct stock for each item in this order
+            const populatedOrder = await Order.findById(order._id).populate("items.product");
+            if (populatedOrder) {
+                for (const item of populatedOrder.items) {
+                    if (!item.product) continue;
+                    const product = item.product;
+                    const newQty = Math.max(0, (product.stockQuantity || 0) - item.quantity);
+                    await product.constructor.findByIdAndUpdate(product._id, { stockQuantity: newQty });
+                }
+            }
+
             // Mark captain as busy
             await Captain.findByIdAndUpdate(req.captainId, { isBusy: true });
 
