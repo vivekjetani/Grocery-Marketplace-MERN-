@@ -82,7 +82,8 @@ const CategoryManager = () => {
             setCategoryToDelete(catObj);
         } else {
             // Open standard confirmation modal
-            setDeleteCategoryId(id);
+            setItemToDelete({ type: 'category', id, name: categoryName });
+            setShowDeleteConfirm(true);
         }
     };
 
