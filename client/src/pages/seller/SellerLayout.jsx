@@ -62,7 +62,12 @@ const SellerLayout = () => {
   return (
     <>
       <div className="flex items-center justify-between px-4 md:px-8 border-b border-slate-300 dark:border-slate-700 py-3 bg-white dark:bg-slate-900 transition-all duration-300">
-        <Link to={"/"}><h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Gramodaya</h1></Link>
+        <Link to={"/"}>
+          <h1 className="text-2xl font-black select-none tracking-tight">
+            <span className="text-slate-900 dark:text-white">Gra</span>
+            <span style={{ WebkitTextStroke: "1px #6366f1", color: "transparent" }}>modaya</span>
+          </h1>
+        </Link>
         <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
           <p className="hidden sm:block">Hi! Admin</p>
 

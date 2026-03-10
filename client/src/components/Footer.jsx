@@ -32,8 +32,9 @@ const Footer = () => {
       <div className="text-slate-600 dark:text-slate-400 pt-16 pb-8 px-6 md:px-16 lg:px-24 xl:px-32">
         <div className="flex flex-wrap justify-between gap-12 md:gap-6">
           <div className="max-w-80">
-            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent mb-4">
-              Gramodaya
+            <h1 className="text-3xl font-black mb-4 select-none tracking-tight">
+              <span className="text-slate-900 dark:text-white">Gra</span>
+              <span style={{ WebkitTextStroke: "1px #6366f1", color: "transparent" }}>modaya</span>
             </h1>
             <p className="text-sm leading-relaxed">
               We're bringing you the freshest produce with the most vibey shopping experience.

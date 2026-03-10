@@ -57,9 +57,10 @@ const Navbar = () => {
         <motion.h2
           whileHover={{ scale: 1.05, rotate: -2, transition: { type: "spring", stiffness: 300 } }}
           whileTap={{ scale: 0.95 }}
-          className="text-2xl font-bold text-gradient dark:text-gradient-dark origin-left"
+          className="text-2xl font-black origin-left select-none tracking-tight"
         >
-          Gramodaya
+          <span className="text-slate-900 dark:text-white">Gra</span>
+          <span style={{ WebkitTextStroke: "1px #6366f1", color: "transparent" }}>modaya</span>
         </motion.h2>
       </Link>
 
