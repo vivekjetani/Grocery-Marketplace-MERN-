@@ -1,11 +1,30 @@
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
+import { useState, useContext } from "react";
+import { AppContext } from "../context/AppContext";
+import { Loader2 } from "lucide-react";
 
 const NewsLetter = () => {
-  const handleSubscribe = (e) => {
+  const { axios } = useContext(AppContext);
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubscribe = async (e) => {
     e.preventDefault();
-    toast.success("You're subscribed! 🎉");
-    e.target.reset();
+    if (!email) return;
+
+    setLoading(true);
+    try {
+      const { data } = await axios.post('/api/newsletter/subscribe', { email });
+      if (data.success) {
+        toast.success("You're subscribed! 🎉");
+        setEmail('');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to subscribe. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -34,12 +53,15 @@ const NewsLetter = () => {
             type="email"
             placeholder="Drop your email here..."
             required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
           <button
             type="submit"
-            className="w-full sm:w-[30%] h-14 text-slate-900 dark:text-white bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer font-bold text-lg rounded-xl sm:rounded-l-none shadow-lg hover:shadow-xl active:scale-[0.98]"
+            disabled={loading}
+            className="w-full sm:w-[30%] h-14 text-slate-900 dark:text-white bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer font-bold text-lg rounded-xl sm:rounded-l-none shadow-lg hover:shadow-xl active:scale-[0.98] disabled:opacity-75 flex items-center justify-center gap-2"
           >
-            Subscribe ✨
+            {loading ? <Loader2 className="animate-spin w-5 h-5" /> : "Subscribe ✨"}
           </button>
         </form>
       </div>

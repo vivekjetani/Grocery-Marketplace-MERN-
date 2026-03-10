@@ -239,7 +239,7 @@ export const sendOrderStatusUpdateEmail = async (user, order) => {
 };
 
 // Newsletter Template
-export const sendNewsletterEmail = async (toEmail, subject, htmlContent) => {
+export const sendNewsletterEmail = async (toEmail, subject, htmlContent, token) => {
     try {
         const transporter = await createTransporter();
         const smtpSettings = await Smtp.findOne();
@@ -248,7 +248,7 @@ export const sendNewsletterEmail = async (toEmail, subject, htmlContent) => {
           ${htmlContent}
           <div class="unsubscribe">
               <p>You are receiving this email because you subscribed to our newsletter.</p>
-              <p>To stop receiving these emails, <a href="${process.env.FRONTEND_URL}/unsubscribe?email=${encodeURIComponent(toEmail)}">unsubscribe here</a>.</p>
+              <p>To stop receiving these emails, <a href="${process.env.FRONTEND_URL}/unsubscribe?token=${encodeURIComponent(token)}">unsubscribe here</a>.</p>
           </div>
       `;
 

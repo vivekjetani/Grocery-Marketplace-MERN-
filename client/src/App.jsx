@@ -45,6 +45,8 @@ import HelpCenter from "./pages/HelpCenter";
 import SafetyInfo from "./pages/SafetyInfo";
 import Cancellation from "./pages/Cancellation";
 import ContactUs from "./pages/ContactUs";
+import Unsubscribe from "./pages/Unsubscribe";
+import Newsletter from "./pages/seller/Newsletter";
 
 const App = () => {
   const location = useLocation();
@@ -112,6 +114,7 @@ const App = () => {
             <Route path="/safety-info" element={<PageTransition><SafetyInfo /></PageTransition>} />
             <Route path="/cancellation" element={<PageTransition><Cancellation /></PageTransition>} />
             <Route path="/contact-us" element={<PageTransition><ContactUs /></PageTransition>} />
+            <Route path="/unsubscribe" element={<PageTransition><Unsubscribe /></PageTransition>} />
 
             <Route path="/profile" element={<PageTransition><ProfileLayout /></PageTransition>}>
               <Route index element={<ProfileInfo />} />
@@ -136,6 +139,7 @@ const App = () => {
               <Route path="smtp" element={isSeller ? <SmtpSettings /> : null} />
               <Route path="store-info" element={isSeller ? <StoreInfo /> : null} />
               <Route path="inquiries" element={isSeller ? <Inquiries /> : null} />
+              <Route path="newsletter" element={isSeller ? <Newsletter /> : null} />
             </Route>
           </Routes>
         </AnimatePresence>

@@ -15,6 +15,7 @@ import categoryRoutes from "./routes/category.routes.js";
 import captainRoutes from "./routes/captain.routes.js";
 import couponRoutes from "./routes/coupon.routes.js";
 import careerRoutes from "./routes/career.routes.js";
+import newsletterRoutes from "./routes/newsletter.routes.js";
 import startCleanupJob from "./cron/cleanup.js";
 import { startLowStockAlertJob } from "./cron/lowStockAlert.js";
 
@@ -47,7 +48,8 @@ app.use(
   })
 );
 app.use(cookieParser());
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Api endpoints
 app.use("/images", express.static("uploads"));
@@ -62,6 +64,7 @@ app.use("/api/category", categoryRoutes);
 app.use("/api/captain", captainRoutes);
 app.use("/api/coupon", couponRoutes);
 app.use("/api/career", careerRoutes);
+app.use("/api/newsletter", newsletterRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

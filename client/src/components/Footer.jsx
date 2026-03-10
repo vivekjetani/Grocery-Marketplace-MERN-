@@ -1,11 +1,30 @@
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import { useState, useContext } from "react";
+import { AppContext } from "../context/AppContext";
+import { Loader2 } from "lucide-react";
 
 const Footer = () => {
-  const handleFooterSubscribe = (e) => {
+  const { axios } = useContext(AppContext);
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleFooterSubscribe = async (e) => {
     e.preventDefault();
-    toast.success("Subscribed! 🎉");
-    e.target.reset();
+    if (!email) return;
+
+    setLoading(true);
+    try {
+      const { data } = await axios.post('/api/newsletter/subscribe', { email });
+      if (data.success) {
+        toast.success("Subscribed! 🎉");
+        setEmail('');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to subscribe. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -71,11 +90,22 @@ const Footer = () => {
                 className="w-full bg-white dark:bg-slate-800 rounded-full border border-slate-300 dark:border-slate-600 h-10 pl-5 pr-12 outline-none focus:ring-2 focus:ring-primary shadow-sm transition-all text-slate-900 dark:text-white"
                 placeholder="you@vibes.com"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
-              <button type="submit" className="absolute right-1 top-1 bottom-1 aspect-square rounded-full bg-primary hover:bg-accent text-white flex items-center justify-center transition-colors" aria-label="Subscribe">
-                <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 12H5m14 0-4 4m4-4-4-4" />
-                </svg>
+              <button
+                type="submit"
+                disabled={loading}
+                className="absolute right-1 top-1 bottom-1 aspect-square rounded-full bg-primary hover:bg-accent text-white flex items-center justify-center transition-colors disabled:opacity-75"
+                aria-label="Subscribe"
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 12H5m14 0-4 4m4-4-4-4" />
+                  </svg>
+                )}
               </button>
             </form>
           </div>
