@@ -1,85 +1,34 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import Smtp from "../models/smtp.model.js";
 import jwt from "jsonwebtoken";
-import dns from "dns";
 
-// Force IPv4 globally
-dns.setDefaultResultOrder('ipv4first');
-
-// Custom DNS lookup that ONLY returns IPv4, preventing any IPv6 fallback
-const ipv4OnlyLookup = (hostname, options, callback) => {
-    dns.resolve4(hostname, (err, addresses) => {
-        if (err) return callback(err);
-        if (!addresses || addresses.length === 0) {
-            return callback(new Error(`No IPv4 address found for ${hostname}`));
-        }
-        callback(null, addresses[0], 4); // force family=4
-    });
+// ─── Resend client (initialized lazily so env is loaded) ──────────────────────
+let _resend = null;
+const getResend = () => {
+    if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
+    return _resend;
 };
 
-export const createTransporter = async () => {
+// ─── Get "from" address from DB settings ──────────────────────────────────────
+const getFromAddress = async () => {
     const smtpSettings = await Smtp.findOne();
     if (!smtpSettings || !smtpSettings.isEnabled) {
         throw new Error("SMTP is not configured or disabled");
     }
-
-    return nodemailer.createTransport({
-        host: smtpSettings.host,
-        port: smtpSettings.port,
-        secure: smtpSettings.port === 465,
-        auth: {
-            user: smtpSettings.user,
-            pass: smtpSettings.password,
-        },
-        dnsLookup: ipv4OnlyLookup, // ← KEY FIX: bypass Node's getaddrinfo entirely
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 10000,
-        tls: {
-            rejectUnauthorized: false
-        },
-        debug: true,
-        logger: true
-    });
+    // e.g. "Gramodaya <noreply@yourdomain.com>"
+    return `${smtpSettings.fromEmail} <${smtpSettings.user}>`;
 };
 
-// Send a test email
-export const sendTestEmail = async (toEmail) => {
-    try {
-        const smtpSettings = await Smtp.findOne();
-        console.log(`[SMTP Test] Attempting to send to ${toEmail} via ${smtpSettings.host}:${smtpSettings.port}`);
-
-        const transporter = await createTransporter();
-
-        console.log("[SMTP Test] Verifying transporter connection...");
-        await transporter.verify();
-        console.log("[SMTP Test] Transporter verified. Sending mail...");
-
-        const info = await transporter.sendMail({
-            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
-            to: toEmail,
-            subject: "Test Email from Gramodaya",
-            html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <div style="text-align: center; margin-bottom: 20px;">
-            <h2 style="color: #4CAF50;">SMTP Setup Successful!</h2>
-          </div>
-          <p>Hello,</p>
-          <p>This is a test email sent from the Gramodaya Admin Panel to verify that your SMTP settings are working correctly.</p>
-          <p>If you received this email, your email notifications are now active.</p>
-          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-          <p style="font-size: 12px; color: #888; text-align: center;">Gramodaya Admin</p>
-        </div>
-      `,
-        });
-        return { success: true, messageId: info.messageId };
-    } catch (error) {
-        console.error("Error sending test email:", error);
-        throw error;
-    }
+// ─── Core send helper ─────────────────────────────────────────────────────────
+const sendEmail = async ({ to, subject, html }) => {
+    const from = await getFromAddress();
+    const resend = getResend();
+    const { data, error } = await resend.emails.send({ from, to, subject, html });
+    if (error) throw new Error(error.message || JSON.stringify(error));
+    return data;
 };
 
-// Common Template Wrapper Template
+// ─── Common Template Wrapper ──────────────────────────────────────────────────
 const emailWrapper = (content) => `
 <!DOCTYPE html>
 <html>
@@ -91,81 +40,97 @@ const emailWrapper = (content) => `
         .header h1 { margin: 0; font-size: 24px; font-weight: 600; }
         .content { padding: 30px; line-height: 1.6; }
         .footer { background-color: #f9f9f9; text-align: center; padding: 20px; font-size: 12px; color: #888; border-top: 1px solid #eee; }
-        .btn { display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 15px;}
+        .btn { display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 15px; }
         .unsubscribe { margin-top: 20px; font-size: 11px; color: #aaa; text-align: center; }
         .unsubscribe a { color: #aaa; text-decoration: underline; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>Gramodaya</h1>
-        </div>
-        <div class="content">
-            ${content}
-        </div>
+        <div class="header"><h1>Gramodaya</h1></div>
+        <div class="content">${content}</div>
         <div class="footer">
             <p>&copy; ${new Date().getFullYear()} Gramodaya. All rights reserved.</p>
         </div>
     </div>
 </body>
-</html>
-`;
+</html>`;
 
-// Send Order Confirmation Email to User
+// ─── Send Test Email ───────────────────────────────────────────────────────────
+export const sendTestEmail = async (toEmail) => {
+    try {
+        const smtpSettings = await Smtp.findOne();
+        console.log(`[Resend Test] Sending test email to ${toEmail}`);
+
+        const html = emailWrapper(`
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="color: #4CAF50;">SMTP Setup Successful!</h2>
+            </div>
+            <p>Hello,</p>
+            <p>This is a test email sent from the Gramodaya Admin Panel to verify that your email settings are working correctly.</p>
+            <p>If you received this email, your email notifications are now active.</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+            <p style="font-size: 12px; color: #888; text-align: center;">Gramodaya Admin</p>
+        `);
+
+        const data = await sendEmail({
+            to: toEmail,
+            subject: "Test Email from Gramodaya",
+            html,
+        });
+
+        console.log("[Resend Test] Email sent successfully:", data?.id);
+        return { success: true, messageId: data?.id };
+    } catch (error) {
+        console.error("Error sending test email:", error);
+        throw error;
+    }
+};
+
+// ─── Order Confirmation to User ───────────────────────────────────────────────
 export const sendOrderConfirmationEmail = async (user, order) => {
     try {
-        const transporter = await createTransporter();
-        const smtpSettings = await Smtp.findOne();
-
         const itemsHtml = order.products.map(item => `
-        <tr>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.name}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">₹${item.price}</td>
-        </tr>
-    `).join('');
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.name}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">₹${item.price}</td>
+            </tr>
+        `).join('');
 
         const content = `
-        <h2 style="color: #4CAF50;">Thank You for Your Order, ${user.name}!</h2>
-        <p>Your order <strong>#${order._id}</strong> has been placed successfully and is currently in progress.</p>
-        <p>We will notify you once it's out for delivery.</p>
-        
-        <h3 style="margin-top: 30px;">Order Details</h3>
-        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-            <thead>
-                <tr style="background-color: #f9f9f9;">
-                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Product</th>
-                    <th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">Qty</th>
-                    <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;">Price</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${itemsHtml}
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="2" style="padding: 10px; text-align: right; font-weight: bold;">Total Amount:</td>
-                    <td style="padding: 10px; text-align: right; font-weight: bold; color: #4CAF50;">₹${order.amount.toFixed(2)}</td>
-                </tr>
-            </tfoot>
-        </table>
-        
-        <p style="margin-top: 30px;">
-            <a href="${process.env.FRONTEND_URL}/profile" class="btn">View Order Status</a>
-        </p>
+            <h2 style="color: #4CAF50;">Thank You for Your Order, ${user.name}!</h2>
+            <p>Your order <strong>#${order._id}</strong> has been placed successfully and is currently in progress.</p>
+            <p>We will notify you once it's out for delivery.</p>
+            <h3 style="margin-top: 30px;">Order Details</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                <thead>
+                    <tr style="background-color: #f9f9f9;">
+                        <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Product</th>
+                        <th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">Qty</th>
+                        <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;">Price</th>
+                    </tr>
+                </thead>
+                <tbody>${itemsHtml}</tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2" style="padding: 10px; text-align: right; font-weight: bold;">Total Amount:</td>
+                        <td style="padding: 10px; text-align: right; font-weight: bold; color: #4CAF50;">₹${order.amount.toFixed(2)}</td>
+                    </tr>
+                </tfoot>
+            </table>
+            <p style="margin-top: 30px;">
+                <a href="${process.env.FRONTEND_URL}/profile" class="btn">View Order Status</a>
+            </p>
+            ${order.deliveryOtp ? `
+            <div style="margin:24px 0;padding:20px;background:#f0f4ff;border:2px solid #6366f1;border-radius:10px;text-align:center;">
+                <p style="margin:0 0 6px;font-size:13px;color:#4f46e5;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">🔐 Your Delivery OTP</p>
+                <p style="margin:0;font-size:36px;font-weight:900;letter-spacing:10px;color:#4338ca;font-family:monospace;">${order.deliveryOtp}</p>
+                <p style="margin:10px 0 0;font-size:12px;color:#6b7280;">Share this with your delivery captain to confirm receipt of your order.</p>
+            </div>` : ''}
+        `;
 
-        ${order.deliveryOtp ? `
-        <div style="margin:24px 0;padding:20px;background:#f0f4ff;border:2px solid #6366f1;border-radius:10px;text-align:center;">
-          <p style="margin:0 0 6px;font-size:13px;color:#4f46e5;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">🔐 Your Delivery OTP</p>
-          <p style="margin:0;font-size:36px;font-weight:900;letter-spacing:10px;color:#4338ca;font-family:monospace;">${order.deliveryOtp}</p>
-          <p style="margin:10px 0 0;font-size:12px;color:#6b7280;">Share this with your delivery captain to confirm receipt of your order.</p>
-        </div>
-        ` : ''}
-    `;
-
-        await transporter.sendMail({
-            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
+        await sendEmail({
             to: user.email,
             subject: `Order Confirmation - #${order._id}`,
             html: emailWrapper(content),
@@ -175,30 +140,27 @@ export const sendOrderConfirmationEmail = async (user, order) => {
     }
 };
 
-// Send Order Notification to Admin
+// ─── Order Notification to Admin ──────────────────────────────────────────────
 export const sendOrderAdminNotification = async (user, order) => {
     try {
-        const transporter = await createTransporter();
         const smtpSettings = await Smtp.findOne();
+        if (!smtpSettings?.admins?.length) return;
 
-        if (!smtpSettings || !smtpSettings.admins || smtpSettings.admins.length === 0) return;
-
-        const enabledAdmins = smtpSettings.admins.filter(admin => admin.isEnabled).map(admin => admin.email);
+        const enabledAdmins = smtpSettings.admins
+            .filter(admin => admin.isEnabled)
+            .map(admin => admin.email);
         if (enabledAdmins.length === 0) return;
 
         const content = `
-        <h2>New Order Received!</h2>
-        <p>A new order has been placed by <strong>${user.name}</strong> (${user.email}).</p>
-        <p><strong>Order ID:</strong> #${order._id}</p>
-        <p><strong>Total Amount:</strong> ₹${order.amount.toFixed(2)}</p>
-        <p>
-            <a href="${process.env.ADMIN_URL || '#'} " class="btn">View Order in Dashboard</a>
-        </p>
-    `;
+            <h2>New Order Received!</h2>
+            <p>A new order has been placed by <strong>${user.name}</strong> (${user.email}).</p>
+            <p><strong>Order ID:</strong> #${order._id}</p>
+            <p><strong>Total Amount:</strong> ₹${order.amount.toFixed(2)}</p>
+            <p><a href="${process.env.ADMIN_URL || '#'}" class="btn">View Order in Dashboard</a></p>
+        `;
 
-        await transporter.sendMail({
-            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
-            to: enabledAdmins.join(','),
+        await sendEmail({
+            to: enabledAdmins,
             subject: `New Order Received - #${order._id}`,
             html: emailWrapper(content),
         });
@@ -207,57 +169,35 @@ export const sendOrderAdminNotification = async (user, order) => {
     }
 };
 
-// Send Order Status Update Email to User
+// ─── Order Status Update to User ──────────────────────────────────────────────
 export const sendOrderStatusUpdateEmail = async (user, order) => {
     try {
-        const transporter = await createTransporter();
-        const smtpSettings = await Smtp.findOne();
+        const statusMap = {
+            'Confirmed': { msg: "Good news! Your order has been confirmed and is being processed.", color: "#2196F3" },
+            'In Progress': { msg: "Your order has been picked up by a delivery captain and is on its way!", color: "#7C3AED" },
+            'Out for Delivery': { msg: "Your order is out for delivery and will reach you soon!", color: "#FF9800" },
+            'Delivered': { msg: "Your order has been successfully delivered. We hope you enjoy your purchase!", color: "#4CAF50" },
+            'Cancelled': { msg: "Your order has been cancelled.", color: "#F44336" },
+            'Rejected': { msg: "Unfortunately, your order could not be fulfilled by a delivery captain. Please contact support.", color: "#F44336" },
+        };
 
-        let statusMessage = "Your order status has been updated.";
-        let statusColor = "#333";
-
-        switch (order.status) {
-            case 'Confirmed':
-                statusMessage = "Good news! Your order has been confirmed and is being processed.";
-                statusColor = "#2196F3"; // Blue
-                break;
-            case 'In Progress':
-                statusMessage = "Your order has been picked up by a delivery captain and is on its way!";
-                statusColor = "#7C3AED"; // Purple
-                break;
-            case 'Out for Delivery':
-                statusMessage = "Your order is out for delivery and will reach you soon!";
-                statusColor = "#FF9800"; // Orange
-                break;
-            case 'Delivered':
-                statusMessage = "Your order has been successfully delivered. We hope you enjoy your purchase!";
-                statusColor = "#4CAF50"; // Green
-                break;
-            case 'Cancelled':
-                statusMessage = "Your order has been cancelled.";
-                statusColor = "#F44336"; // Red
-                break;
-            case 'Rejected':
-                statusMessage = "Unfortunately, your order could not be fulfilled by a delivery captain. Please contact support.";
-                statusColor = "#F44336"; // Red
-                break;
-        }
+        const { msg: statusMessage, color: statusColor } = statusMap[order.status] || {
+            msg: "Your order status has been updated.",
+            color: "#333",
+        };
 
         const content = `
-          <h2>Order Status Update</h2>
-          <p>Hello ${user.name},</p>
-          <p>${statusMessage}</p>
-          <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid ${statusColor}; border-radius: 4px;">
-              <h3 style="margin: 0 0 10px 0; color: ${statusColor};">Status: ${order.status}</h3>
-              <p style="margin: 0;"><strong>Order ID:</strong> #${order._id}</p>
-          </div>
-          <p>
-              <a href="${process.env.FRONTEND_URL}/profile" class="btn">Track Order</a>
-          </p>
-      `;
+            <h2>Order Status Update</h2>
+            <p>Hello ${user.name},</p>
+            <p>${statusMessage}</p>
+            <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid ${statusColor}; border-radius: 4px;">
+                <h3 style="margin: 0 0 10px 0; color: ${statusColor};">Status: ${order.status}</h3>
+                <p style="margin: 0;"><strong>Order ID:</strong> #${order._id}</p>
+            </div>
+            <p><a href="${process.env.FRONTEND_URL}/profile" class="btn">Track Order</a></p>
+        `;
 
-        await transporter.sendMail({
-            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
+        await sendEmail({
             to: user.email,
             subject: `Order Update - ${order.status} - #${order._id}`,
             html: emailWrapper(content),
@@ -267,24 +207,20 @@ export const sendOrderStatusUpdateEmail = async (user, order) => {
     }
 };
 
-// Newsletter Template
+// ─── Newsletter ───────────────────────────────────────────────────────────────
 export const sendNewsletterEmail = async (toEmail, subject, htmlContent, token) => {
     try {
-        const transporter = await createTransporter();
-        const smtpSettings = await Smtp.findOne();
-
         const contentWithUnsubscribe = `
-          ${htmlContent}
-          <div class="unsubscribe">
-              <p>You are receiving this email because you subscribed to our newsletter.</p>
-              <p>To stop receiving these emails, <a href="${process.env.FRONTEND_URL}/unsubscribe?token=${encodeURIComponent(token)}">unsubscribe here</a>.</p>
-          </div>
-      `;
+            ${htmlContent}
+            <div class="unsubscribe">
+                <p>You are receiving this email because you subscribed to our newsletter.</p>
+                <p>To stop receiving these emails, <a href="${process.env.FRONTEND_URL}/unsubscribe?token=${encodeURIComponent(token)}">unsubscribe here</a>.</p>
+            </div>
+        `;
 
-        await transporter.sendMail({
-            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
+        await sendEmail({
             to: toEmail,
-            subject: subject,
+            subject,
             html: emailWrapper(contentWithUnsubscribe),
         });
     } catch (error) {
@@ -292,27 +228,23 @@ export const sendNewsletterEmail = async (toEmail, subject, htmlContent, token) 
     }
 };
 
-// Send Captain Welcome Email (credentials)
+// ─── Captain Welcome Email ────────────────────────────────────────────────────
 export const sendCaptainWelcomeEmail = async (captain, plainPassword) => {
     try {
-        const transporter = await createTransporter();
-        const smtpSettings = await Smtp.findOne();
-
         const content = `
-          <h2>Welcome to the Delivery Team, ${captain.name}!</h2>
-          <p>You have been added as a delivery captain on Gramodaya.</p>
-          <p>Here are your login credentials for the captain portal:</p>
-          <div style="margin: 20px 0; padding: 20px; background: #f4f7f6; border-radius: 8px; border-left: 4px solid #4CAF50;">
-            <p style="margin: 8px 0;"><strong>Login URL:</strong> <a href="${process.env.FRONTEND_URL}/captain">${process.env.FRONTEND_URL}/captain</a></p>
-            <p style="margin: 8px 0;"><strong>Email:</strong> ${captain.email}</p>
-            <p style="margin: 8px 0;"><strong>Password:</strong> <code style="background:#e8f5e9;padding:2px 6px;border-radius:4px;font-family:monospace;">${plainPassword}</code></p>
-          </div>
-          <p style="color:#888;font-size:13px;">Please log in and change your password after your first login.</p>
-          <p>We're excited to have you on board! You will receive email notifications when a delivery is assigned to you.</p>
+            <h2>Welcome to the Delivery Team, ${captain.name}!</h2>
+            <p>You have been added as a delivery captain on Gramodaya.</p>
+            <p>Here are your login credentials for the captain portal:</p>
+            <div style="margin: 20px 0; padding: 20px; background: #f4f7f6; border-radius: 8px; border-left: 4px solid #4CAF50;">
+                <p style="margin: 8px 0;"><strong>Login URL:</strong> <a href="${process.env.FRONTEND_URL}/captain">${process.env.FRONTEND_URL}/captain</a></p>
+                <p style="margin: 8px 0;"><strong>Email:</strong> ${captain.email}</p>
+                <p style="margin: 8px 0;"><strong>Password:</strong> <code style="background:#e8f5e9;padding:2px 6px;border-radius:4px;font-family:monospace;">${plainPassword}</code></p>
+            </div>
+            <p style="color:#888;font-size:13px;">Please log in and change your password after your first login.</p>
+            <p>We're excited to have you on board!</p>
         `;
 
-        await transporter.sendMail({
-            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
+        await sendEmail({
             to: captain.email,
             subject: `Welcome to Gramodaya - Captain Login Details`,
             html: emailWrapper(content),
@@ -322,45 +254,36 @@ export const sendCaptainWelcomeEmail = async (captain, plainPassword) => {
     }
 };
 
-// Send Order Assignment Notification to Captain
+// ─── Captain Order Assignment Notification ────────────────────────────────────
 export const sendCaptainOrderNotification = async (captain, order, customer, address) => {
     try {
-        const transporter = await createTransporter();
-        const smtpSettings = await Smtp.findOne();
-
         const itemsHtml = order.products.map(item => `
-          <tr>
-            <td style="padding:8px;border-bottom:1px solid #eee;">${item.name}</td>
-            <td style="padding:8px;border-bottom:1px solid #eee;text-align:center;">${item.quantity}</td>
-          </tr>
+            <tr>
+                <td style="padding:8px;border-bottom:1px solid #eee;">${item.name}</td>
+                <td style="padding:8px;border-bottom:1px solid #eee;text-align:center;">${item.quantity}</td>
+            </tr>
         `).join('');
 
         const content = `
-          <h2>📦 New Delivery Assigned to You!</h2>
-          <p>Hello ${captain.name},</p>
-          <p>You have been assigned a new delivery order. Please log in to the captain portal to accept or reject it.</p>
-          
-          <div style="margin:20px 0;padding:20px;background:#f4f7f6;border-radius:8px;border-left:4px solid #4CAF50;">
-            <p style="margin:6px 0;"><strong>Order ID:</strong> #${order._id}</p>
-            <p style="margin:6px 0;"><strong>Customer:</strong> ${customer.name}</p>
-            <p style="margin:6px 0;"><strong>Address:</strong> ${address.street}, ${address.city}, ${address.state} - ${address.zipcode}</p>
-            <p style="margin:6px 0;"><strong>Total:</strong> ₹${order.amount.toFixed(2)}</p>
-          </div>
-
-          <h3>Items to Deliver:</h3>
-          <table style="width:100%;border-collapse:collapse;">
-            <thead><tr style="background:#f9f9f9;"><th style="padding:8px;text-align:left;">Item</th><th style="padding:8px;text-align:center;">Qty</th></tr></thead>
-            <tbody>${itemsHtml}</tbody>
-          </table>
-
-          <p style="margin-top:20px;">
-            <a href="${process.env.FRONTEND_URL}/captain" class="btn">Go to Captain Portal</a>
-          </p>
-          <p style="color:#888;font-size:13px;">Please respond to this delivery request within a reasonable time.</p>
+            <h2>📦 New Delivery Assigned to You!</h2>
+            <p>Hello ${captain.name},</p>
+            <p>You have been assigned a new delivery order. Please log in to the captain portal to accept or reject it.</p>
+            <div style="margin:20px 0;padding:20px;background:#f4f7f6;border-radius:8px;border-left:4px solid #4CAF50;">
+                <p style="margin:6px 0;"><strong>Order ID:</strong> #${order._id}</p>
+                <p style="margin:6px 0;"><strong>Customer:</strong> ${customer.name}</p>
+                <p style="margin:6px 0;"><strong>Address:</strong> ${address.street}, ${address.city}, ${address.state} - ${address.zipcode}</p>
+                <p style="margin:6px 0;"><strong>Total:</strong> ₹${order.amount.toFixed(2)}</p>
+            </div>
+            <h3>Items to Deliver:</h3>
+            <table style="width:100%;border-collapse:collapse;">
+                <thead><tr style="background:#f9f9f9;"><th style="padding:8px;text-align:left;">Item</th><th style="padding:8px;text-align:center;">Qty</th></tr></thead>
+                <tbody>${itemsHtml}</tbody>
+            </table>
+            <p style="margin-top:20px;"><a href="${process.env.FRONTEND_URL}/captain" class="btn">Go to Captain Portal</a></p>
+            <p style="color:#888;font-size:13px;">Please respond to this delivery request within a reasonable time.</p>
         `;
 
-        await transporter.sendMail({
-            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
+        await sendEmail({
             to: captain.email,
             subject: `New Delivery Assigned - Order #${order._id}`,
             html: emailWrapper(content),
@@ -370,26 +293,22 @@ export const sendCaptainOrderNotification = async (captain, order, customer, add
     }
 };
 
-// Send Order Rejected Email to Customer
+// ─── Order Rejected Email to Customer ────────────────────────────────────────
 export const sendOrderRejectedEmail = async (user, order) => {
     try {
-        const transporter = await createTransporter();
-        const smtpSettings = await Smtp.findOne();
-
         const content = `
-          <h2>Order Update - #${order._id}</h2>
-          <p>Hello ${user.name},</p>
-          <p>We're sorry to inform you that your order <strong>#${order._id}</strong> could not be assigned to a delivery captain at this time.</p>
-          <div style="margin:20px 0;padding:15px;background:#fff3f3;border-left:4px solid #F44336;border-radius:4px;">
-            <h3 style="margin:0 0 8px 0;color:#F44336;">Status: Order Rejected</h3>
-            <p style="margin:0;">Unfortunately, no captain was available to accept your delivery. Please contact support for assistance.</p>
-          </div>
-          <p>We sincerely apologize for the inconvenience. Our team will look into this.</p>
-          <p><a href="${process.env.FRONTEND_URL}/profile/orders" class="btn">View My Orders</a></p>
+            <h2>Order Update - #${order._id}</h2>
+            <p>Hello ${user.name},</p>
+            <p>We're sorry to inform you that your order <strong>#${order._id}</strong> could not be assigned to a delivery captain at this time.</p>
+            <div style="margin:20px 0;padding:15px;background:#fff3f3;border-left:4px solid #F44336;border-radius:4px;">
+                <h3 style="margin:0 0 8px 0;color:#F44336;">Status: Order Rejected</h3>
+                <p style="margin:0;">Unfortunately, no captain was available to accept your delivery. Please contact support for assistance.</p>
+            </div>
+            <p>We sincerely apologize for the inconvenience.</p>
+            <p><a href="${process.env.FRONTEND_URL}/profile/orders" class="btn">View My Orders</a></p>
         `;
 
-        await transporter.sendMail({
-            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
+        await sendEmail({
             to: user.email,
             subject: `Order Rejected - #${order._id}`,
             html: emailWrapper(content),
@@ -399,21 +318,15 @@ export const sendOrderRejectedEmail = async (user, order) => {
     }
 };
 
-// Send Delivery Confirmation Email with Review Links to Customer
+// ─── Delivery Confirmation + Review Links ─────────────────────────────────────
 export const sendDeliveryConfirmationEmail = async (user, order) => {
     try {
-        const transporter = await createTransporter();
-        const smtpSettings = await Smtp.findOne();
-
-        // Build per-product star rating rows (5 individual ★ links)
         const items = (order.items || []).filter(i => i.product);
         const productReviewBlocks = items.map(item => {
             const product = item.product;
             const productId = product._id;
             const productName = product.name || "Product";
 
-            // Each ★ is a separate link — clicking star N opens /review?rating=N&token=SIGNED_JWT
-            // Token encodes productId + orderId + userId for secure no-login review submission
             const reviewToken = jwt.sign(
                 { productId: productId.toString(), orderId: order._id.toString(), userId: order.userId.toString() },
                 process.env.JWT_SECRET,
@@ -426,35 +339,30 @@ export const sendDeliveryConfirmationEmail = async (user, order) => {
             }).join("");
 
             return `
-              <div style="margin:12px 0;padding:14px 16px;background:#fffdf0;border:1px solid #fde68a;border-radius:10px;">
-                <p style="margin:0 0 4px;font-weight:700;color:#1e293b;font-size:14px;">${productName}</p>
-                <p style="margin:0 0 10px;font-size:12px;color:#94a3b8;">Qty: ${item.quantity} &nbsp;·&nbsp; Click a star to rate</p>
-                <div>${stars}</div>
-              </div>`;
+                <div style="margin:12px 0;padding:14px 16px;background:#fffdf0;border:1px solid #fde68a;border-radius:10px;">
+                    <p style="margin:0 0 4px;font-weight:700;color:#1e293b;font-size:14px;">${productName}</p>
+                    <p style="margin:0 0 10px;font-size:12px;color:#94a3b8;">Qty: ${item.quantity} &nbsp;·&nbsp; Click a star to rate</p>
+                    <div>${stars}</div>
+                </div>`;
         }).join("");
 
         const content = `
-          <h2 style="color:#4CAF50;">🎉 Order Delivered Successfully!</h2>
-          <p>Hello ${user.name},</p>
-          <p>Your order <strong>#${order._id}</strong> has been delivered successfully. Thank you for shopping with us!</p>
-
-          <div style="margin:20px 0;padding:16px;background:#f0fdf4;border:2px solid #4CAF50;border-radius:10px;">
-            <p style="margin:0;font-size:15px;color:#166534;font-weight:700;">✅ Delivery Confirmed</p>
-            <p style="margin:6px 0 0;font-size:13px;color:#4CAF50;">Total: ₹${order.amount} via ${order.paymentType}</p>
-          </div>
-
-          <h3 style="color:#1e293b;margin-bottom:8px;">⭐ Rate Your Purchase</h3>
-          <p style="font-size:13px;color:#64748b;margin-bottom:12px;">Click on the stars to rate each product — it takes just a second!</p>
-
-          ${productReviewBlocks}
-
-          <p style="margin-top:24px;">
-            <a href="${process.env.FRONTEND_URL}/profile/orders" class="btn">View Order Details</a>
-          </p>
+            <h2 style="color:#4CAF50;">🎉 Order Delivered Successfully!</h2>
+            <p>Hello ${user.name},</p>
+            <p>Your order <strong>#${order._id}</strong> has been delivered successfully. Thank you for shopping with us!</p>
+            <div style="margin:20px 0;padding:16px;background:#f0fdf4;border:2px solid #4CAF50;border-radius:10px;">
+                <p style="margin:0;font-size:15px;color:#166534;font-weight:700;">✅ Delivery Confirmed</p>
+                <p style="margin:6px 0 0;font-size:13px;color:#4CAF50;">Total: ₹${order.amount} via ${order.paymentType}</p>
+            </div>
+            <h3 style="color:#1e293b;margin-bottom:8px;">⭐ Rate Your Purchase</h3>
+            <p style="font-size:13px;color:#64748b;margin-bottom:12px;">Click on the stars to rate each product — it takes just a second!</p>
+            ${productReviewBlocks}
+            <p style="margin-top:24px;">
+                <a href="${process.env.FRONTEND_URL}/profile/orders" class="btn">View Order Details</a>
+            </p>
         `;
 
-        await transporter.sendMail({
-            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
+        await sendEmail({
             to: user.email,
             subject: `Order Delivered — Share Your Review! #${order._id}`,
             html: emailWrapper(content),
@@ -464,30 +372,23 @@ export const sendDeliveryConfirmationEmail = async (user, order) => {
     }
 };
 
-
-
-
-// Send Verification Email
+// ─── Verification Email ───────────────────────────────────────────────────────
 export const sendVerificationEmail = async (toEmail, name, verificationToken) => {
     try {
-        const transporter = await createTransporter();
-        const smtpSettings = await Smtp.findOne();
-
         const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
 
         const content = `
-          <h2>Welcome to Gramodaya, ${name}!</h2>
-          <p>Thank you for registering. Please verify your email address to activate your account.</p>
-          <div style="text-align: center; margin: 30px 0;">
-              <a href="${verificationUrl}" class="btn" style="padding: 12px 24px; font-size: 16px;">Verify Email Address</a>
-          </div>
-          <p style="font-size: 14px; color: #666;">If the button doesn't work, copy and paste this link into your browser:</p>
-          <p style="font-size: 14px; word-break: break-all; color: #4CAF50;">${verificationUrl}</p>
-          <p style="margin-top: 30px;">If you didn't create an account, you can safely ignore this email.</p>
-      `;
+            <h2>Welcome to Gramodaya, ${name}!</h2>
+            <p>Thank you for registering. Please verify your email address to activate your account.</p>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${verificationUrl}" class="btn" style="padding: 12px 24px; font-size: 16px;">Verify Email Address</a>
+            </div>
+            <p style="font-size: 14px; color: #666;">If the button doesn't work, copy and paste this link into your browser:</p>
+            <p style="font-size: 14px; word-break: break-all; color: #4CAF50;">${verificationUrl}</p>
+            <p style="margin-top: 30px;">If you didn't create an account, you can safely ignore this email.</p>
+        `;
 
-        await transporter.sendMail({
-            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
+        await sendEmail({
             to: toEmail,
             subject: "Verify Your Email Address",
             html: emailWrapper(content),
@@ -497,12 +398,9 @@ export const sendVerificationEmail = async (toEmail, name, verificationToken) =>
     }
 };
 
-// Send Low-Stock Alert Email to Admin Recipients
+// ─── Low Stock Alert to Admins ────────────────────────────────────────────────
 export const sendLowStockAlertEmail = async (products, adminEmails) => {
     try {
-        const transporter = await createTransporter();
-        const smtpSettings = await Smtp.findOne();
-
         const rows = products.map(p => `
             <tr>
                 <td style="padding:10px 12px;border-bottom:1px solid #eee;font-weight:600;color:#1e293b;">${p.name}</td>
@@ -518,37 +416,33 @@ export const sendLowStockAlertEmail = async (products, adminEmails) => {
         `).join("");
 
         const content = `
-          <h2 style="color:#dc2626;">&#9888;&#65039; Low Stock Alert</h2>
-          <p>The following products are running critically low on stock and need immediate restocking.</p>
-
-          <div style="margin:20px 0;padding:16px;background:#fff7ed;border:2px solid #f97316;border-radius:10px;">
-            <p style="margin:0;font-size:14px;color:#9a3412;font-weight:700;">
-              &#128680; ${products.length} product${products.length > 1 ? "s" : ""} need${products.length === 1 ? "s" : ""} restocking
+            <h2 style="color:#dc2626;">⚠️ Low Stock Alert</h2>
+            <p>The following products are running critically low on stock and need immediate restocking.</p>
+            <div style="margin:20px 0;padding:16px;background:#fff7ed;border:2px solid #f97316;border-radius:10px;">
+                <p style="margin:0;font-size:14px;color:#9a3412;font-weight:700;">
+                    🚨 ${products.length} product${products.length > 1 ? "s" : ""} need${products.length === 1 ? "s" : ""} restocking
+                </p>
+            </div>
+            <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-top:16px;">
+                <thead>
+                    <tr style="background:#f8fafc;">
+                        <th style="padding:12px;text-align:left;border-bottom:2px solid #e2e8f0;color:#475569;">Product</th>
+                        <th style="padding:12px;text-align:left;border-bottom:2px solid #e2e8f0;color:#475569;">Category</th>
+                        <th style="padding:12px;text-align:center;border-bottom:2px solid #e2e8f0;color:#475569;">Stock Status</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+            <p style="margin-top:24px;font-size:13px;color:#64748b;">
+                Please update the stock levels in the admin panel as soon as possible.
             </p>
-          </div>
-
-          <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-top:16px;">
-            <thead>
-              <tr style="background:#f8fafc;">
-                <th style="padding:12px;text-align:left;border-bottom:2px solid #e2e8f0;color:#475569;">Product</th>
-                <th style="padding:12px;text-align:left;border-bottom:2px solid #e2e8f0;color:#475569;">Category</th>
-                <th style="padding:12px;text-align:center;border-bottom:2px solid #e2e8f0;color:#475569;">Stock Status</th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-          </table>
-
-          <p style="margin-top:24px;font-size:13px;color:#64748b;">
-            Please update the stock levels in the admin panel as soon as possible to avoid stockouts.
-          </p>
-          <p style="margin-top:10px;">
-            <a href="${process.env.FRONTEND_URL}/seller/product-list" class="btn">Go to Product List</a>
-          </p>
+            <p style="margin-top:10px;">
+                <a href="${process.env.FRONTEND_URL}/seller/product-list" class="btn">Go to Product List</a>
+            </p>
         `;
 
-        await transporter.sendMail({
-            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
-            to: adminEmails.join(","),
+        await sendEmail({
+            to: adminEmails,
             subject: `Low Stock Alert — ${products.length} product${products.length > 1 ? "s" : ""} need restocking`,
             html: emailWrapper(content),
         });
@@ -560,50 +454,32 @@ export const sendLowStockAlertEmail = async (products, adminEmails) => {
     }
 };
 
-// Send Career Application Alert to Admin/HR Recipients
+// ─── Career Application Alert to Admin/HR ────────────────────────────────────
 export const sendCareerApplicationEmail = async (application, career, adminEmails) => {
     try {
-        const transporter = await createTransporter();
-        const smtpSettings = await Smtp.findOne();
-
-        // ── Resume link now points to Cloudinary URL directly ─────────────────
-        const resumeLink = application.resumeUrl; // Cloudinary secure_url
-
-        // OLD: local link (commented out)
-        // const resumeLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/images/${application.resumeUrl}`;
+        const resumeLink = application.resumeUrl;
 
         const content = `
-          <h2 style="color:#2563eb;">📄 New Job Application Received</h2>
-          <p>A new application has been submitted for the position of <strong>${career.title}</strong>.</p>
-
-          <div style="margin:20px 0;padding:20px;background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #2563eb;border-radius:6px;">
-            <p style="margin:5px 0;"><strong>Applicant Name:</strong> ${application.applicantName}</p>
-            <p style="margin:5px 0;"><strong>Email:</strong> <a href="mailto:${application.applicantEmail}">${application.applicantEmail}</a></p>
-            <p style="margin:5px 0;"><strong>Phone:</strong> ${application.applicantPhone || 'N/A'}</p>
-            ${application.coverLetter ? `<p style="margin:10px 0 5px;"><strong>Cover Letter:</strong></p><div style="background:#fff;padding:10px;border-radius:4px;border:1px solid #e2e8f0;">${application.coverLetter.replace(/\n/g, '<br>')}</div>` : ''}
-          </div>
-
-          <div style="margin-top:20px;text-align:center;">
-             <a href="${resumeLink}" class="btn" style="background-color:#2563eb;color:#fff;text-decoration:none;padding:12px 24px;border-radius:4px;font-weight:bold;display:inline-block;">View / Download Resume</a>
-          </div>
-
-          <p style="margin-top:30px;font-size:13px;color:#64748b;">
-            To manage this application, <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/seller/careers">log in to the Admin Dashboard</a>.
-          </p>
+            <h2 style="color:#2563eb;">📄 New Job Application Received</h2>
+            <p>A new application has been submitted for the position of <strong>${career.title}</strong>.</p>
+            <div style="margin:20px 0;padding:20px;background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #2563eb;border-radius:6px;">
+                <p style="margin:5px 0;"><strong>Applicant Name:</strong> ${application.applicantName}</p>
+                <p style="margin:5px 0;"><strong>Email:</strong> <a href="mailto:${application.applicantEmail}">${application.applicantEmail}</a></p>
+                <p style="margin:5px 0;"><strong>Phone:</strong> ${application.applicantPhone || 'N/A'}</p>
+                ${application.coverLetter ? `<p style="margin:10px 0 5px;"><strong>Cover Letter:</strong></p><div style="background:#fff;padding:10px;border-radius:4px;border:1px solid #e2e8f0;">${application.coverLetter.replace(/\n/g, '<br>')}</div>` : ''}
+            </div>
+            <div style="margin-top:20px;text-align:center;">
+                <a href="${resumeLink}" class="btn" style="background-color:#2563eb;">View / Download Resume</a>
+            </div>
+            <p style="margin-top:30px;font-size:13px;color:#64748b;">
+                To manage this application, <a href="${process.env.FRONTEND_URL}/seller/careers">log in to the Admin Dashboard</a>.
+            </p>
         `;
 
-        await transporter.sendMail({
-            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
-            to: adminEmails.join(","),
+        await sendEmail({
+            to: adminEmails,
             subject: `New Application: ${career.title} - ${application.applicantName}`,
             html: emailWrapper(content),
-            // ── OLD: local file attachment (commented out) ─────────────────────
-            // attachments: [
-            //     {
-            //         filename: application.resumeUrl.substring(application.resumeUrl.indexOf('-') + 1),
-            //         path: `uploads/${application.resumeUrl}`
-            //     }
-            // ]
         });
 
         return { success: true };
@@ -613,37 +489,28 @@ export const sendCareerApplicationEmail = async (application, career, adminEmail
     }
 };
 
-// Send "Thank You" / Confirmation Email to Applicant
+// ─── Applicant Confirmation Email ─────────────────────────────────────────────
 export const sendApplicantConfirmationEmail = async (applicantEmail, applicantName, jobTitle) => {
     try {
-        const transporter = await createTransporter();
-        const smtpSettings = await Smtp.findOne();
-
         const content = `
-          <h2 style="color:#2563eb;">Thank You for Applying, ${applicantName}!</h2>
-          <p>We've successfully received your application for the <strong>${jobTitle}</strong> position.</p>
-          <p>Our team is excited to learn more about you. We typically review applications within 48 hours.</p>
-
-          <div style="margin:25px 0;padding:20px;background:#f0fafb;border-radius:12px;border:1px solid #cffafe;">
-            <h3 style="margin-top:0;color:#0891b2;font-size:16px;">What's Next? (Our Hiring Process)</h3>
-            <ol style="padding-left:20px;margin-bottom:0;color:#164e63;font-size:14px;line-height:1.6;">
-              <li><strong>Application Review:</strong> Our talent team reviews your profile and experience.</li>
-              <li><strong>First Interaction:</strong> A 30-minute introductory call to align on goals.</li>
-              <li><strong>Skill Assessment:</strong> A technical deep-dive or task related to the role.</li>
-              <li><strong>Final Sync:</strong> Meet the team and discuss cultural alignment.</li>
-              <li><strong>Offer:</strong> Receive an offer and join the Gramodaya family!</li>
-            </ol>
-          </div>
-
-          <p style="margin-top:20px;">We'll be in touch soon regardless of the outcome. Good luck!</p>
-          
-          <p style="margin-top:30px;font-size:12px;color:#94a3b8;">
-            Please do not reply to this automated email. For any queries, contact our support team.
-          </p>
+            <h2 style="color:#2563eb;">Thank You for Applying, ${applicantName}!</h2>
+            <p>We've successfully received your application for the <strong>${jobTitle}</strong> position.</p>
+            <p>Our team is excited to learn more about you. We typically review applications within 48 hours.</p>
+            <div style="margin:25px 0;padding:20px;background:#f0fafb;border-radius:12px;border:1px solid #cffafe;">
+                <h3 style="margin-top:0;color:#0891b2;font-size:16px;">What's Next? (Our Hiring Process)</h3>
+                <ol style="padding-left:20px;margin-bottom:0;color:#164e63;font-size:14px;line-height:1.6;">
+                    <li><strong>Application Review:</strong> Our talent team reviews your profile and experience.</li>
+                    <li><strong>First Interaction:</strong> A 30-minute introductory call to align on goals.</li>
+                    <li><strong>Skill Assessment:</strong> A technical deep-dive or task related to the role.</li>
+                    <li><strong>Final Sync:</strong> Meet the team and discuss cultural alignment.</li>
+                    <li><strong>Offer:</strong> Receive an offer and join the Gramodaya family!</li>
+                </ol>
+            </div>
+            <p style="margin-top:20px;">We'll be in touch soon regardless of the outcome. Good luck!</p>
+            <p style="margin-top:30px;font-size:12px;color:#94a3b8;">Please do not reply to this automated email.</p>
         `;
 
-        await transporter.sendMail({
-            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
+        await sendEmail({
             to: applicantEmail,
             subject: `Application Received: ${jobTitle} - Gramodaya`,
             html: emailWrapper(content),
@@ -655,31 +522,25 @@ export const sendApplicantConfirmationEmail = async (applicantEmail, applicantNa
     }
 };
 
-// Send Contact Inquiry Notification to Admin
+// ─── Contact Inquiry to Admin ─────────────────────────────────────────────────
 export const sendContactInquiryEmail = async (inquiry, adminEmails) => {
     try {
-        const transporter = await createTransporter();
-        const smtpSettings = await Smtp.findOne();
-
         const content = `
-          <h2 style="color:#10b981;">📩 New Contact Inquiry Received</h2>
-          <p>You have a new message from the Gramodaya contact form.</p>
-
-          <div style="margin:20px 0;padding:20px;background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #10b981;border-radius:6px;">
-            <p style="margin:5px 0;"><strong>Name:</strong> ${inquiry.name}</p>
-            <p style="margin:5px 0;"><strong>Email:</strong> <a href="mailto:${inquiry.email}">${inquiry.email}</a></p>
-            <p style="margin:10px 0 5px;"><strong>Message:</strong></p>
-            <div style="background:#fff;padding:10px;border-radius:4px;border:1px solid #e2e8f0;white-space:pre-wrap;">${inquiry.message}</div>
-          </div>
-
-          <p style="margin-top:30px;font-size:13px;color:#64748b;">
-            To manage this inquiry, <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/seller/inquiries">log in to the Admin Dashboard</a>.
-          </p>
+            <h2 style="color:#10b981;">📩 New Contact Inquiry Received</h2>
+            <p>You have a new message from the Gramodaya contact form.</p>
+            <div style="margin:20px 0;padding:20px;background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #10b981;border-radius:6px;">
+                <p style="margin:5px 0;"><strong>Name:</strong> ${inquiry.name}</p>
+                <p style="margin:5px 0;"><strong>Email:</strong> <a href="mailto:${inquiry.email}">${inquiry.email}</a></p>
+                <p style="margin:10px 0 5px;"><strong>Message:</strong></p>
+                <div style="background:#fff;padding:10px;border-radius:4px;border:1px solid #e2e8f0;white-space:pre-wrap;">${inquiry.message}</div>
+            </div>
+            <p style="margin-top:30px;font-size:13px;color:#64748b;">
+                To manage this inquiry, <a href="${process.env.FRONTEND_URL}/seller/inquiries">log in to the Admin Dashboard</a>.
+            </p>
         `;
 
-        await transporter.sendMail({
-            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
-            to: adminEmails.join(","),
+        await sendEmail({
+            to: adminEmails,
             subject: `New Inquiry: ${inquiry.name}`,
             html: emailWrapper(content),
         });
@@ -690,29 +551,23 @@ export const sendContactInquiryEmail = async (inquiry, adminEmails) => {
     }
 };
 
-// Send "Thank You" Confirmation to User who contacted
+// ─── User Contact Confirmation ────────────────────────────────────────────────
 export const sendUserContactConfirmationEmail = async (userEmail, userName) => {
     try {
-        const transporter = await createTransporter();
-        const smtpSettings = await Smtp.findOne();
-
         const content = `
-          <h2 style="color:#10b981;">We've Received Your Message!</h2>
-          <p>Hello ${userName},</p>
-          <p>Thank you for reaching out to Gramodaya. We've received your inquiry and our team will get back to you within 24 hours.</p>
-          
-          <div style="margin:25px 0;padding:20px;background:#f0fdf4;border-radius:12px;border:1px solid #dcfce7;">
-            <p style="margin:0;color:#166534;font-size:14px;line-height:1.6;">
-              "At Gramodaya, every community voice matters. Whether it's a question about our village-sourced products or a feedback for improvement, we're here to listen."
-            </p>
-          </div>
-
-          <p>Have a great day!</p>
-          <p>— Team Gramodaya</p>
+            <h2 style="color:#10b981;">We've Received Your Message!</h2>
+            <p>Hello ${userName},</p>
+            <p>Thank you for reaching out to Gramodaya. We've received your inquiry and our team will get back to you within 24 hours.</p>
+            <div style="margin:25px 0;padding:20px;background:#f0fdf4;border-radius:12px;border:1px solid #dcfce7;">
+                <p style="margin:0;color:#166534;font-size:14px;line-height:1.6;">
+                    "At Gramodaya, every community voice matters. Whether it's a question about our village-sourced products or feedback for improvement, we're here to listen."
+                </p>
+            </div>
+            <p>Have a great day!</p>
+            <p>— Team Gramodaya</p>
         `;
 
-        await transporter.sendMail({
-            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
+        await sendEmail({
             to: userEmail,
             subject: `We've received your inquiry - Gramodaya`,
             html: emailWrapper(content),
@@ -724,28 +579,24 @@ export const sendUserContactConfirmationEmail = async (userEmail, userName) => {
     }
 };
 
-// Send Reset Password Email
+// ─── Reset Password Email ─────────────────────────────────────────────────────
 export const sendResetPasswordEmail = async (toEmail, name, resetToken, expiresMinutes) => {
     try {
-        const transporter = await createTransporter();
-        const smtpSettings = await Smtp.findOne();
-
         const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
 
         const content = `
-          <h2>Password Reset Request</h2>
-          <p>Hello ${name},</p>
-          <p>We received a request to reset your password. This link will expire in <strong>${expiresMinutes} minutes</strong>.</p>
-          <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetUrl}" class="btn" style="padding: 12px 24px; font-size: 16px;">Reset My Password</a>
-          </div>
-          <p style="font-size: 14px; color: #666;">If the button doesn't work, copy and paste this link into your browser:</p>
-          <p style="font-size: 14px; word-break: break-all; color: #4CAF50;">${resetUrl}</p>
-          <p style="margin-top: 30px;">If you didn't request a password reset, you can safely ignore this email.</p>
-      `;
+            <h2>Password Reset Request</h2>
+            <p>Hello ${name},</p>
+            <p>We received a request to reset your password. This link will expire in <strong>${expiresMinutes} minutes</strong>.</p>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${resetUrl}" class="btn" style="padding: 12px 24px; font-size: 16px;">Reset My Password</a>
+            </div>
+            <p style="font-size: 14px; color: #666;">If the button doesn't work, copy and paste this link:</p>
+            <p style="font-size: 14px; word-break: break-all; color: #4CAF50;">${resetUrl}</p>
+            <p style="margin-top: 30px;">If you didn't request a password reset, you can safely ignore this email.</p>
+        `;
 
-        await transporter.sendMail({
-            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
+        await sendEmail({
             to: toEmail,
             subject: "Reset Your Password",
             html: emailWrapper(content),
@@ -755,46 +606,36 @@ export const sendResetPasswordEmail = async (toEmail, name, resetToken, expiresM
     }
 };
 
-// ─── Cloudinary Error Alert to Admins ─────────────────────────────────────────
-// Sent when a Cloudinary upload/delete operation fails so admins are aware.
+// ─── Cloudinary Error Alert to Admins ────────────────────────────────────────
 export const sendCloudinaryErrorEmail = async (context, errorMessage) => {
     try {
         const smtpSettings = await Smtp.findOne();
-        if (!smtpSettings || !smtpSettings.isEnabled) return;
+        if (!smtpSettings?.isEnabled) return;
 
-        // Only send to admins who have cloudinaryError notifications enabled
         const adminEmails = (smtpSettings.admins || [])
             .filter(a => a.isEnabled && a.notifications?.cloudinaryError !== false)
             .map(a => a.email);
-
         if (adminEmails.length === 0) return;
 
-        const transporter = await createTransporter();
-
         const content = `
-          <h2 style="color:#dc2626;">⚠️ Cloudinary Upload Error</h2>
-          <p>A file upload to Cloudinary has failed on your Gramodaya store. Please review the details below.</p>
-
-          <div style="margin:20px 0;padding:20px;background:#fef2f2;border:2px solid #fca5a5;border-radius:10px;">
-            <p style="margin:0 0 8px;font-weight:700;color:#991b1b;">Context:</p>
-            <p style="margin:0 0 12px;color:#7f1d1d;font-size:14px;">${context}</p>
-            <p style="margin:0 0 4px;font-weight:700;color:#991b1b;">Error Message:</p>
-            <pre style="margin:0;background:#fff;padding:10px;border-radius:6px;font-size:12px;color:#b91c1c;white-space:pre-wrap;word-break:break-all;">${errorMessage}</pre>
-          </div>
-
-          <p style="font-size:13px;color:#64748b;">
-            This error means a file was <strong>not saved to Cloudinary</strong>. The affected record may be incomplete.
-            Please check your Cloudinary credentials and storage limits.
-          </p>
-
-          <p style="margin-top:20px;">
-            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/seller" class="btn" style="background:#dc2626;">Go to Admin Panel</a>
-          </p>
+            <h2 style="color:#dc2626;">⚠️ Cloudinary Upload Error</h2>
+            <p>A file upload to Cloudinary has failed on your Gramodaya store.</p>
+            <div style="margin:20px 0;padding:20px;background:#fef2f2;border:2px solid #fca5a5;border-radius:10px;">
+                <p style="margin:0 0 8px;font-weight:700;color:#991b1b;">Context:</p>
+                <p style="margin:0 0 12px;color:#7f1d1d;font-size:14px;">${context}</p>
+                <p style="margin:0 0 4px;font-weight:700;color:#991b1b;">Error Message:</p>
+                <pre style="margin:0;background:#fff;padding:10px;border-radius:6px;font-size:12px;color:#b91c1c;white-space:pre-wrap;word-break:break-all;">${errorMessage}</pre>
+            </div>
+            <p style="font-size:13px;color:#64748b;">
+                Please check your Cloudinary credentials and storage limits.
+            </p>
+            <p style="margin-top:20px;">
+                <a href="${process.env.FRONTEND_URL}/seller" class="btn" style="background:#dc2626;">Go to Admin Panel</a>
+            </p>
         `;
 
-        await transporter.sendMail({
-            from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
-            to: adminEmails.join(","),
+        await sendEmail({
+            to: adminEmails,
             subject: `⚠️ Cloudinary Error — ${context}`,
             html: emailWrapper(content),
         });
