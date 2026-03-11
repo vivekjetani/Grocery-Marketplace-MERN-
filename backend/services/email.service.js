@@ -17,11 +17,6 @@ const sendEmail = async ({ to, subject, html }) => {
         const apiKey = process.env.RESEND_API_KEY;
         if (!apiKey) throw new Error("RESEND_API_KEY is not configured in .env");
 
-        // If from doesn't contain an email, wrap it with the default Resend onboarding email
-        if (!from.includes('@')) {
-            from = `${from} <onboarding@resend.dev>`;
-        }
-
         const resend = new Resend(apiKey);
         const { data, error } = await resend.emails.send({ from, to, subject, html });
         if (error) throw new Error(error.message || JSON.stringify(error));
@@ -30,11 +25,6 @@ const sendEmail = async ({ to, subject, html }) => {
 
     // ─── Default: Standard SMTP (Nodemailer) ──────────────────────────────────
     else {
-        // For SMTP, if no email is provided in the name, append the SMTP user email
-        if (!from.includes('@')) {
-            from = `${from} <${smtpSettings.user}>`;
-        }
-
         const transporter = nodemailer.createTransport({
             host: smtpSettings.host,
             port: Number(smtpSettings.port),

@@ -429,7 +429,7 @@ const SmtpSettings = () => {
                                             placeholder='Defaults to Gramodaya marketplace'
                                             className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
                                         <p className="text-[10px] text-slate-400 px-1">
-                                            Tip: Just enter a name like <strong>Gramodaya</strong>. The email address is added automatically.
+                                            Enter your preferred display name (e.g. <strong>Gramodaya</strong>).
                                         </p>
                                     </div>
                                 </motion.div>
