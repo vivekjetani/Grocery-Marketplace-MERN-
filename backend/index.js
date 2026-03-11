@@ -32,13 +32,24 @@ const allowedOrigins = [
   "http://localhost:5174",
   "http://127.0.0.1:5174",
 ];
+
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
+
 //middlewares
 app.use(
   cors({
     origin: (origin, callback) => {
       // allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) === -1) {
+
+      // Remove trailing slash for comparison
+      const normalizedOrigin = origin.replace(/\/$/, "");
+      const normalizedAllowed = allowedOrigins.map(o => o.replace(/\/$/, ""));
+
+      if (normalizedAllowed.indexOf(normalizedOrigin) === -1) {
+        console.error(`CORS Blocked: Incoming origin "${origin}" not in allowed list:`, allowedOrigins);
         return callback(new Error("CORS policy blocked this origin"), false);
       }
       return callback(null, true);

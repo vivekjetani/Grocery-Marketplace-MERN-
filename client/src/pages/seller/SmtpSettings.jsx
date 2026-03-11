@@ -424,12 +424,12 @@ const SmtpSettings = () => {
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Verified "From" Email</label>
-                                        <input type="email" name="fromEmail" value={settings.fromEmail} onChange={handleChange}
-                                            placeholder="onboarding@resend.dev" required
+                                        <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Sender Name (Optional for Resend)</label>
+                                        <input type="text" name="fromEmail" value={settings.fromEmail} onChange={handleChange}
+                                            placeholder='Defaults to Gramodaya marketplace'
                                             className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
                                         <p className="text-[10px] text-slate-400 px-1">
-                                            If you don't have a verified domain, use <strong>onboarding@resend.dev</strong>
+                                            Tip: Just enter a name like <strong>Gramodaya</strong>. The email address is added automatically.
                                         </p>
                                     </div>
                                 </motion.div>
@@ -437,9 +437,9 @@ const SmtpSettings = () => {
 
                             {settings.service === 'smtp' && (
                                 <div className="space-y-2">
-                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Display "From" Name</label>
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Sender Name</label>
                                     <input type="text" name="fromEmail" value={settings.fromEmail} onChange={handleChange}
-                                        placeholder="Gramodaya Store" required
+                                        placeholder='e.g. Gramodaya' required
                                         className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
                                 </div>
                             )}

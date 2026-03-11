@@ -48,7 +48,7 @@ const smtpSchema = new mongoose.Schema({
     ],
     fromEmail: {
         type: String,
-        required: true,
+        required: false,
     },
     isEnabled: {
         type: Boolean,
