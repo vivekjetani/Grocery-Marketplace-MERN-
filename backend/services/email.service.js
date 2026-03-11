@@ -12,6 +12,7 @@ export const createTransporter = async () => {
     return nodemailer.createTransport({
         host: smtpSettings.host,
         port: smtpSettings.port,
+        family: 4, // Force IPv4 to avoid ENETUNREACH on systems with broken IPv6
         secure: smtpSettings.port === 465, // true for 465, false for other ports
         auth: {
             user: smtpSettings.user,
