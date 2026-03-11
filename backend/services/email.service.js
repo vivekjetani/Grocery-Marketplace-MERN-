@@ -1,6 +1,10 @@
 import nodemailer from "nodemailer";
 import Smtp from "../models/smtp.model.js";
 import jwt from "jsonwebtoken";
+import dns from "dns";
+
+// Force IPv4 for all DNS lookups - critical for Railway and environments with broken IPv6
+dns.setDefaultResultOrder('ipv4first');
 
 // Utility to create transporter based on DB settings
 export const createTransporter = async () => {
