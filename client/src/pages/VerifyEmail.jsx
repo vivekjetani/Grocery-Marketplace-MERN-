@@ -34,9 +34,14 @@ const VerifyEmail = () => {
                 }
             } catch (error) {
                 setStatus('error');
-                setMessage(
-                    error.response?.data?.message || 'Something went wrong. The link might be expired or invalid.'
-                );
+                if (!error.response) {
+                    // This happens when the backend is unreachable (e.g., wrong URL or server down)
+                    setMessage(`Cannot connect to the server. Please check your internet or ensure the backend is running at ${backendUrl}`);
+                } else {
+                    setMessage(
+                        error.response?.data?.message || 'Something went wrong. The link might be expired or invalid.'
+                    );
+                }
             }
         };
 
