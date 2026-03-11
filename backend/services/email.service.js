@@ -34,7 +34,7 @@ const sendEmail = async ({ to, subject, html }) => {
         const apiKey = process.env.brevo_api;
         if (!apiKey) throw new Error("brevo_api key is not configured in .env");
 
-        const response = await fetch("https://api.brevo.com/v1/smtp/email", {
+        const response = await fetch("https://api.brevo.com/v3/smtp/email", {
             method: "POST",
             headers: {
                 "accept": "application/json",
@@ -52,9 +52,16 @@ const sendEmail = async ({ to, subject, html }) => {
             })
         });
 
-        const data = await response.json();
+        const text = await response.text();
+        let data = {};
+        try {
+            data = text ? JSON.parse(text) : {};
+        } catch (e) {
+            console.error("Brevo response parsing failed:", text);
+        }
+
         if (!response.ok) {
-            throw new Error(data.message || "Failed to send email via Brevo");
+            throw new Error(data.message || `Failed to send email via Brevo (${response.status})`);
         }
         return { id: data.messageId };
     }
