@@ -349,6 +349,8 @@ const SmtpSettings = () => {
                         <div className="p-8 space-y-6">
                             {/* Provider Selection */}
                             <div className="flex gap-3 p-1.5 bg-slate-100 dark:bg-slate-700/50 rounded-2xl">
+                                {/* Commented out Standard SMTP as per request */}
+                                {/*
                                 <button
                                     type="button"
                                     onClick={() => setSettings(prev => ({ ...prev, service: 'smtp' }))}
@@ -359,82 +361,57 @@ const SmtpSettings = () => {
                                 >
                                     Standard SMTP
                                 </button>
+                                */}
                                 <button
                                     type="button"
-                                    onClick={() => setSettings(prev => ({ ...prev, service: 'resend' }))}
-                                    className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${settings.service === 'resend'
+                                    onClick={() => setSettings(prev => ({ ...prev, service: 'brevo' }))}
+                                    className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${settings.service === 'brevo'
                                         ? "bg-white dark:bg-slate-600 text-indigo-600 shadow-sm"
                                         : "text-slate-400 hover:text-slate-600"
                                         }`}
                                 >
-                                    Resend API
+                                    Brevo API
                                 </button>
                             </div>
 
-                            {settings.service === 'smtp' ? (
-                                <motion.div
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    className="space-y-6"
-                                >
-                                    <div className="grid grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">SMTP Host</label>
-                                            <input type="text" name="host" value={settings.host} onChange={handleChange}
-                                                placeholder="smtp.gmail.com" required
-                                                className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">SMTP Port</label>
-                                            <input type="number" name="port" value={settings.port} onChange={handleChange}
-                                                placeholder="587" required
-                                                className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
+                            {/* Removed ternary to only show Brevo view */}
+                            <motion.div
+                                initial={{ opacity: 0, x: 10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="space-y-6"
+                            >
+                                <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl border border-emerald-100 dark:border-emerald-900/40">
+                                    <div className="flex gap-3">
+                                        <Shield className="text-emerald-600 shrink-0" size={20} />
+                                        <div>
+                                            <p className="text-xs font-bold text-emerald-900 dark:text-emerald-100">Brevo Active</p>
+                                            <p className="text-[10px] text-emerald-700 dark:text-emerald-300 mt-1 leading-relaxed">
+                                                Brevo uses the <strong>brevo_api</strong> environment variable. Sender info is pulled from your configuration below.
+                                            </p>
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Username / Email</label>
-                                            <input type="email" name="user" value={settings.user} onChange={handleChange}
-                                                placeholder="admin@example.com" required
-                                                className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Password / App Password</label>
-                                            <input type="password" name="password" value={settings.password} onChange={handleChange}
-                                                placeholder="••••••••••••" required
-                                                className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            ) : (
-                                <motion.div
-                                    initial={{ opacity: 0, x: 10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    className="space-y-6"
-                                >
-                                    <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-900/40">
-                                        <div className="flex gap-3">
-                                            <Shield className="text-indigo-600 shrink-0" size={20} />
-                                            <div>
-                                                <p className="text-xs font-bold text-indigo-900 dark:text-indigo-100">Environment Config Active</p>
-                                                <p className="text-[10px] text-indigo-700 dark:text-indigo-300 mt-1 leading-relaxed">
-                                                    Resend is configured via the <strong>RESEND_API_KEY</strong> environment variable in your hosting platform.
-                                                </p>
-                                            </div>
-                                        </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Sender Email (user)</label>
+                                        <input type="text" name="user" value={settings.user} onChange={handleChange}
+                                            placeholder="vickyusa@gmail.com"
+                                            className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Sender Name (Optional for Resend)</label>
+                                        <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Display Name (fromEmail)</label>
                                         <input type="text" name="fromEmail" value={settings.fromEmail} onChange={handleChange}
-                                            placeholder='Defaults to Gramodaya marketplace'
+                                            placeholder="Gramodaya marketplace"
                                             className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
-                                        <p className="text-[10px] text-slate-400 px-1">
-                                            Enter your preferred display name (e.g. <strong>Gramodaya</strong>).
-                                        </p>
                                     </div>
-                                </motion.div>
-                            )}
+                                </div>
+                                <p className="text-[10px] text-slate-400 px-1">
+                                    Update your sender details above and click save. Brevo will automatically use these values.
+                                </p>
+                            </motion.div>
 
+                            {/* Commented out as per request */}
+                            {/* 
                             {settings.service === 'smtp' && (
                                 <div className="space-y-2">
                                     <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Sender Name</label>
@@ -443,6 +420,7 @@ const SmtpSettings = () => {
                                         className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
                                 </div>
                             )}
+                            */}
 
                             <button type="submit" disabled={loading}
                                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-2xl shadow-lg shadow-indigo-200 dark:shadow-none transition-all flex items-center justify-center gap-2 group">

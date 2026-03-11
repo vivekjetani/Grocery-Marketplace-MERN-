@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const smtpSchema = new mongoose.Schema({
     service: {
         type: String,
-        enum: ['smtp', 'resend'],
+        enum: ['smtp', 'brevo'],
         default: 'smtp',
     },
     host: {

@@ -1,7 +1,7 @@
-import { Resend } from "resend";
 import nodemailer from "nodemailer";
 import Smtp from "../models/smtp.model.js";
 import jwt from "jsonwebtoken";
+import User from "../models/user.model.js";
 
 // ─── Core send helper ─────────────────────────────────────────────────────────
 const sendEmail = async ({ to, subject, html }) => {
@@ -10,20 +10,57 @@ const sendEmail = async ({ to, subject, html }) => {
         throw new Error("Email service is not configured or disabled");
     }
 
-    let from = smtpSettings.fromEmail || "Gramodaya marketplace";
+    let fromEmail = smtpSettings.user || "vickyusa@gmail.com";
+    let fromName = smtpSettings.fromEmail || "Gramodaya marketplace";
 
-    // ─── If Resend service is selected (SDK) ──────────────────────────────────
-    if (smtpSettings.service === 'resend') {
-        const apiKey = process.env.RESEND_API_KEY;
-        if (!apiKey) throw new Error("RESEND_API_KEY is not configured in .env");
+    // ─── Normalize 'to' into array of { email, name } ─────────────────────────
+    const rawTo = Array.isArray(to) ? to : [to];
+    const recipients = await Promise.all(rawTo.map(async (item) => {
+        // If it's already an object { email, name }, return it
+        if (typeof item === 'object' && item.email) {
+            return { email: item.email, name: item.name || "gramodian" };
+        }
+        // If it's a string (email), try to find name in DB
+        const email = item;
+        const user = await User.findOne({ email }).select("name");
+        return {
+            email: email,
+            name: user ? user.name : "gramodian"
+        };
+    }));
 
-        const resend = new Resend(apiKey);
-        const { data, error } = await resend.emails.send({ from, to, subject, html });
-        if (error) throw new Error(error.message || JSON.stringify(error));
-        return data;
+    // ─── If Brevo service is selected (REST API) ──────────────────────────────
+    if (smtpSettings.service === 'brevo') {
+        const apiKey = process.env.brevo_api;
+        if (!apiKey) throw new Error("brevo_api key is not configured in .env");
+
+        const response = await fetch("https://api.brevo.com/v1/smtp/email", {
+            method: "POST",
+            headers: {
+                "accept": "application/json",
+                "api-key": apiKey,
+                "content-type": "application/json"
+            },
+            body: JSON.stringify({
+                sender: {
+                    name: fromName,
+                    email: fromEmail
+                },
+                to: recipients,
+                subject: subject,
+                htmlContent: html
+            })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || "Failed to send email via Brevo");
+        }
+        return { id: data.messageId };
     }
 
     // ─── Default: Standard SMTP (Nodemailer) ──────────────────────────────────
+    /* Commented out as per request - using Brevo exclusively 
     else {
         const transporter = nodemailer.createTransport({
             host: smtpSettings.host,
@@ -34,12 +71,17 @@ const sendEmail = async ({ to, subject, html }) => {
                 pass: smtpSettings.password,
             },
             tls: {
-                rejectUnauthorized: false // Often needed for different hosting environments
+                rejectUnauthorized: false
             }
         });
 
-        const info = await transporter.sendMail({ from, to, subject, html });
+        const toStr = recipients.map(r => `"${r.name}" <${r.email}>`).join(", ");
+        const info = await transporter.sendMail({ from: `"${fromName}" <${fromEmail}>`, to: toStr, subject, html });
         return { id: info.messageId };
+    }
+    */
+    else {
+        throw new Error(`Standard SMTP is disabled. Service '${smtpSettings.service}' is not supported.`);
     }
 };
 
@@ -74,12 +116,11 @@ const emailWrapper = (content) => `
 // ─── Send Test Email ───────────────────────────────────────────────────────────
 export const sendTestEmail = async (toEmail) => {
     try {
-        const smtpSettings = await Smtp.findOne();
-        console.log(`[Resend Test] Sending test email to ${toEmail}`);
+        console.log(`[Email Test] Sending test email to ${toEmail}`);
 
         const html = emailWrapper(`
             <div style="text-align: center; margin-bottom: 20px;">
-                <h2 style="color: #4CAF50;">SMTP Setup Successful!</h2>
+                <h2 style="color: #4CAF50;">Email Configuration Successful!</h2>
             </div>
             <p>Hello,</p>
             <p>This is a test email sent from the Gramodaya Admin Panel to verify that your email settings are working correctly.</p>
@@ -89,12 +130,12 @@ export const sendTestEmail = async (toEmail) => {
         `);
 
         const data = await sendEmail({
-            to: toEmail,
+            to: { email: toEmail, name: "Test Recipient" },
             subject: "Test Email from Gramodaya",
             html,
         });
 
-        console.log("[Resend Test] Email sent successfully:", data?.id);
+        console.log("[Email Test] Email sent successfully:", data?.id);
         return { success: true, messageId: data?.id };
     } catch (error) {
         console.error("Error sending test email:", error);
@@ -105,7 +146,7 @@ export const sendTestEmail = async (toEmail) => {
 // ─── Order Confirmation to User ───────────────────────────────────────────────
 export const sendOrderConfirmationEmail = async (user, order) => {
     try {
-        const itemsHtml = order.products.map(item => `
+        const itemsHtml = (order.products || []).map(item => `
             <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.name}</td>
                 <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
@@ -146,7 +187,7 @@ export const sendOrderConfirmationEmail = async (user, order) => {
         `;
 
         await sendEmail({
-            to: user.email,
+            to: { email: user.email, name: user.name },
             subject: `Order Confirmation - #${order._id}`,
             html: emailWrapper(content),
         });
@@ -163,7 +204,7 @@ export const sendOrderAdminNotification = async (user, order) => {
 
         const enabledAdmins = smtpSettings.admins
             .filter(admin => admin.isEnabled)
-            .map(admin => admin.email);
+            .map(admin => ({ email: admin.email, name: "Admin" }));
         if (enabledAdmins.length === 0) return;
 
         const content = `
@@ -213,7 +254,7 @@ export const sendOrderStatusUpdateEmail = async (user, order) => {
         `;
 
         await sendEmail({
-            to: user.email,
+            to: { email: user.email, name: user.name },
             subject: `Order Update - ${order.status} - #${order._id}`,
             html: emailWrapper(content),
         });
@@ -234,7 +275,7 @@ export const sendNewsletterEmail = async (toEmail, subject, htmlContent, token) 
         `;
 
         await sendEmail({
-            to: toEmail,
+            to: { email: toEmail, name: "gramodian" },
             subject,
             html: emailWrapper(contentWithUnsubscribe),
         });
@@ -260,7 +301,7 @@ export const sendCaptainWelcomeEmail = async (captain, plainPassword) => {
         `;
 
         await sendEmail({
-            to: captain.email,
+            to: { email: captain.email, name: captain.name },
             subject: `Welcome to Gramodaya - Captain Login Details`,
             html: emailWrapper(content),
         });
@@ -299,7 +340,7 @@ export const sendCaptainOrderNotification = async (captain, order, customer, add
         `;
 
         await sendEmail({
-            to: captain.email,
+            to: { email: captain.email, name: captain.name },
             subject: `New Delivery Assigned - Order #${order._id}`,
             html: emailWrapper(content),
         });
@@ -324,7 +365,7 @@ export const sendOrderRejectedEmail = async (user, order) => {
         `;
 
         await sendEmail({
-            to: user.email,
+            to: { email: user.email, name: user.name },
             subject: `Order Rejected - #${order._id}`,
             html: emailWrapper(content),
         });
@@ -378,7 +419,7 @@ export const sendDeliveryConfirmationEmail = async (user, order) => {
         `;
 
         await sendEmail({
-            to: user.email,
+            to: { email: user.email, name: user.name },
             subject: `Order Delivered — Share Your Review! #${order._id}`,
             html: emailWrapper(content),
         });
@@ -404,7 +445,7 @@ export const sendVerificationEmail = async (toEmail, name, verificationToken) =>
         `;
 
         await sendEmail({
-            to: toEmail,
+            to: { email: toEmail, name: name },
             subject: "Verify Your Email Address",
             html: emailWrapper(content),
         });
@@ -457,7 +498,7 @@ export const sendLowStockAlertEmail = async (products, adminEmails) => {
         `;
 
         await sendEmail({
-            to: adminEmails,
+            to: adminEmails.map(email => ({ email, name: "Admin" })),
             subject: `Low Stock Alert — ${products.length} product${products.length > 1 ? "s" : ""} need restocking`,
             html: emailWrapper(content),
         });
@@ -492,7 +533,7 @@ export const sendCareerApplicationEmail = async (application, career, adminEmail
         `;
 
         await sendEmail({
-            to: adminEmails,
+            to: adminEmails.map(email => ({ email, name: "Admin" })),
             subject: `New Application: ${career.title} - ${application.applicantName}`,
             html: emailWrapper(content),
         });
@@ -526,7 +567,7 @@ export const sendApplicantConfirmationEmail = async (applicantEmail, applicantNa
         `;
 
         await sendEmail({
-            to: applicantEmail,
+            to: { email: applicantEmail, name: applicantName },
             subject: `Application Received: ${jobTitle} - Gramodaya`,
             html: emailWrapper(content),
         });
@@ -555,7 +596,7 @@ export const sendContactInquiryEmail = async (inquiry, adminEmails) => {
         `;
 
         await sendEmail({
-            to: adminEmails,
+            to: adminEmails.map(email => ({ email, name: "Admin" })),
             subject: `New Inquiry: ${inquiry.name}`,
             html: emailWrapper(content),
         });
@@ -583,7 +624,7 @@ export const sendUserContactConfirmationEmail = async (userEmail, userName) => {
         `;
 
         await sendEmail({
-            to: userEmail,
+            to: { email: userEmail, name: userName },
             subject: `We've received your inquiry - Gramodaya`,
             html: emailWrapper(content),
         });
@@ -612,7 +653,7 @@ export const sendResetPasswordEmail = async (toEmail, name, resetToken, expiresM
         `;
 
         await sendEmail({
-            to: toEmail,
+            to: { email: toEmail, name: name },
             subject: "Reset Your Password",
             html: emailWrapper(content),
         });
@@ -650,7 +691,7 @@ export const sendCloudinaryErrorEmail = async (context, errorMessage) => {
         `;
 
         await sendEmail({
-            to: adminEmails,
+            to: adminEmails.map(email => ({ email, name: "Admin" })),
             subject: `⚠️ Cloudinary Error — ${context}`,
             html: emailWrapper(content),
         });
