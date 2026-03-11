@@ -3,10 +3,20 @@ import Smtp from "../models/smtp.model.js";
 import jwt from "jsonwebtoken";
 import dns from "dns";
 
-// Force IPv4 for all DNS lookups - critical for Railway and environments with broken IPv6
+// Force IPv4 globally
 dns.setDefaultResultOrder('ipv4first');
 
-// Utility to create transporter based on DB settings
+// Custom DNS lookup that ONLY returns IPv4, preventing any IPv6 fallback
+const ipv4OnlyLookup = (hostname, options, callback) => {
+    dns.resolve4(hostname, (err, addresses) => {
+        if (err) return callback(err);
+        if (!addresses || addresses.length === 0) {
+            return callback(new Error(`No IPv4 address found for ${hostname}`));
+        }
+        callback(null, addresses[0], 4); // force family=4
+    });
+};
+
 export const createTransporter = async () => {
     const smtpSettings = await Smtp.findOne();
     if (!smtpSettings || !smtpSettings.isEnabled) {
@@ -16,20 +26,20 @@ export const createTransporter = async () => {
     return nodemailer.createTransport({
         host: smtpSettings.host,
         port: smtpSettings.port,
-        family: 4, // Force IPv4 to avoid ENETUNREACH
         secure: smtpSettings.port === 465,
         auth: {
             user: smtpSettings.user,
             pass: smtpSettings.password,
         },
-        connectionTimeout: 10000, // 10 seconds
+        dnsLookup: ipv4OnlyLookup, // ← KEY FIX: bypass Node's getaddrinfo entirely
+        connectionTimeout: 10000,
         greetingTimeout: 10000,
         socketTimeout: 10000,
         tls: {
             rejectUnauthorized: false
         },
-        debug: true, // Enable debug logging
-        logger: true // Log to console
+        debug: true,
+        logger: true
     });
 };
 
