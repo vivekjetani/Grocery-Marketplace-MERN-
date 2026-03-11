@@ -1,22 +1,27 @@
 import mongoose from 'mongoose';
 
 const smtpSchema = new mongoose.Schema({
+    service: {
+        type: String,
+        enum: ['smtp', 'resend'],
+        default: 'smtp',
+    },
     host: {
         type: String,
-        required: true,
+        required: false,
     },
     port: {
         type: Number,
-        required: true,
+        required: false,
         default: 587,
     },
     user: {
         type: String,
-        required: true,
+        required: false,
     },
     password: {
         type: String,
-        required: true,
+        required: false,
     },
     admins: [
         {

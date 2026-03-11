@@ -1,31 +1,46 @@
 import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import Smtp from "../models/smtp.model.js";
 import jwt from "jsonwebtoken";
 
-// ─── Resend client (initialized lazily so env is loaded) ──────────────────────
-let _resend = null;
-const getResend = () => {
-    if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
-    return _resend;
-};
-
-// ─── Get "from" address from DB settings ──────────────────────────────────────
-const getFromAddress = async () => {
-    const smtpSettings = await Smtp.findOne();
-    if (!smtpSettings || !smtpSettings.isEnabled) {
-        throw new Error("SMTP is not configured or disabled");
-    }
-    // e.g. "Gramodaya <noreply@yourdomain.com>"
-    return `${smtpSettings.fromEmail} <${smtpSettings.user}>`;
-};
-
 // ─── Core send helper ─────────────────────────────────────────────────────────
 const sendEmail = async ({ to, subject, html }) => {
-    const from = await getFromAddress();
-    const resend = getResend();
-    const { data, error } = await resend.emails.send({ from, to, subject, html });
-    if (error) throw new Error(error.message || JSON.stringify(error));
-    return data;
+    const smtpSettings = await Smtp.findOne();
+    if (!smtpSettings || !smtpSettings.isEnabled) {
+        throw new Error("Email service is not configured or disabled");
+    }
+
+    const from = smtpSettings.fromEmail;
+
+    // ─── If Resend service is selected (SDK) ──────────────────────────────────
+    if (smtpSettings.service === 'resend') {
+        const apiKey = process.env.RESEND_API_KEY;
+        if (!apiKey) throw new Error("RESEND_API_KEY is not configured in .env");
+
+        const resend = new Resend(apiKey);
+        const { data, error } = await resend.emails.send({ from, to, subject, html });
+        if (error) throw new Error(error.message || JSON.stringify(error));
+        return data;
+    }
+
+    // ─── Default: Standard SMTP (Nodemailer) ──────────────────────────────────
+    else {
+        const transporter = nodemailer.createTransport({
+            host: smtpSettings.host,
+            port: Number(smtpSettings.port),
+            secure: Number(smtpSettings.port) === 465,
+            auth: {
+                user: smtpSettings.user,
+                pass: smtpSettings.password,
+            },
+            tls: {
+                rejectUnauthorized: false // Often needed for different hosting environments
+            }
+        });
+
+        const info = await transporter.sendMail({ from, to, subject, html });
+        return { id: info.messageId };
+    }
 };
 
 // ─── Common Template Wrapper ──────────────────────────────────────────────────

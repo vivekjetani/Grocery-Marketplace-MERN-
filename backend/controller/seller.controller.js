@@ -191,12 +191,13 @@ export const getSmtpSettings = async (req, res) => {
 // update SMTP settings: /api/seller/smtp
 export const updateSmtpSettings = async (req, res) => {
   try {
-    const { host, port, user, password, admins, fromEmail, isEnabled } = req.body;
+    const { host, port, user, password, admins, fromEmail, isEnabled, service } = req.body;
     let smtp = await Smtp.findOne();
     if (smtp) {
       smtp.host = host;
       smtp.port = port;
       smtp.user = user;
+      smtp.service = service;
       if (password) {
         smtp.password = password;
       }
@@ -205,7 +206,7 @@ export const updateSmtpSettings = async (req, res) => {
       smtp.isEnabled = isEnabled;
       await smtp.save();
     } else {
-      smtp = await Smtp.create({ host, port, user, password, admins, fromEmail, isEnabled });
+      smtp = await Smtp.create({ host, port, user, password, admins, fromEmail, isEnabled, service });
     }
     res.status(200).json({ message: "SMTP settings updated", success: true, smtp });
   } catch (error) {

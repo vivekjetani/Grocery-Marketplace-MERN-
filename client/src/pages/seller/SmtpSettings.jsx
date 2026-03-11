@@ -253,6 +253,7 @@ const SmtpSettings = () => {
     const [settings, setSettings] = useState({
         host: "", port: 587, user: "", password: "",
         admins: [], fromEmail: "", isEnabled: true,
+        service: "smtp",
     });
 
     const fetchSettings = async () => {
@@ -346,40 +347,103 @@ const SmtpSettings = () => {
                             <h3 className="font-bold text-slate-800 dark:text-white">Server Configuration</h3>
                         </div>
                         <div className="p-8 space-y-6">
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">SMTP Host</label>
-                                    <input type="text" name="host" value={settings.host} onChange={handleChange}
-                                        placeholder="smtp.gmail.com" required
-                                        className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">SMTP Port</label>
-                                    <input type="number" name="port" value={settings.port} onChange={handleChange}
-                                        placeholder="587" required
-                                        className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
-                                </div>
+                            {/* Provider Selection */}
+                            <div className="flex gap-3 p-1.5 bg-slate-100 dark:bg-slate-700/50 rounded-2xl">
+                                <button
+                                    type="button"
+                                    onClick={() => setSettings(prev => ({ ...prev, service: 'smtp' }))}
+                                    className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${settings.service === 'smtp'
+                                        ? "bg-white dark:bg-slate-600 text-indigo-600 shadow-sm"
+                                        : "text-slate-400 hover:text-slate-600"
+                                        }`}
+                                >
+                                    Standard SMTP
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setSettings(prev => ({ ...prev, service: 'resend' }))}
+                                    className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${settings.service === 'resend'
+                                        ? "bg-white dark:bg-slate-600 text-indigo-600 shadow-sm"
+                                        : "text-slate-400 hover:text-slate-600"
+                                        }`}
+                                >
+                                    Resend API
+                                </button>
                             </div>
-                            <div className="grid grid-cols-2 gap-6">
+
+                            {settings.service === 'smtp' ? (
+                                <motion.div
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className="space-y-6"
+                                >
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">SMTP Host</label>
+                                            <input type="text" name="host" value={settings.host} onChange={handleChange}
+                                                placeholder="smtp.gmail.com" required
+                                                className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">SMTP Port</label>
+                                            <input type="number" name="port" value={settings.port} onChange={handleChange}
+                                                placeholder="587" required
+                                                className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Username / Email</label>
+                                            <input type="email" name="user" value={settings.user} onChange={handleChange}
+                                                placeholder="admin@example.com" required
+                                                className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Password / App Password</label>
+                                            <input type="password" name="password" value={settings.password} onChange={handleChange}
+                                                placeholder="••••••••••••" required
+                                                className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    initial={{ opacity: 0, x: 10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className="space-y-6"
+                                >
+                                    <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-900/40">
+                                        <div className="flex gap-3">
+                                            <Shield className="text-indigo-600 shrink-0" size={20} />
+                                            <div>
+                                                <p className="text-xs font-bold text-indigo-900 dark:text-indigo-100">Environment Config Active</p>
+                                                <p className="text-[10px] text-indigo-700 dark:text-indigo-300 mt-1 leading-relaxed">
+                                                    Resend is configured via the <strong>RESEND_API_KEY</strong> environment variable in your hosting platform.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Verified "From" Email</label>
+                                        <input type="email" name="fromEmail" value={settings.fromEmail} onChange={handleChange}
+                                            placeholder="onboarding@resend.dev" required
+                                            className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
+                                        <p className="text-[10px] text-slate-400 px-1">
+                                            If you don't have a verified domain, use <strong>onboarding@resend.dev</strong>
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {settings.service === 'smtp' && (
                                 <div className="space-y-2">
-                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Username / Email</label>
-                                    <input type="email" name="user" value={settings.user} onChange={handleChange}
-                                        placeholder="admin@example.com" required
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Display "From" Name</label>
+                                    <input type="text" name="fromEmail" value={settings.fromEmail} onChange={handleChange}
+                                        placeholder="Gramodaya Store" required
                                         className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Password / App Password</label>
-                                    <input type="password" name="password" value={settings.password} onChange={handleChange}
-                                        placeholder="••••••••••••" required
-                                        className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">From Name</label>
-                                <input type="text" name="fromEmail" value={settings.fromEmail} onChange={handleChange}
-                                    placeholder="Gramodaya" required
-                                    className="w-full bg-slate-50 dark:bg-slate-700/30 border-none rounded-2xl px-5 py-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
-                            </div>
+                            )}
+
                             <button type="submit" disabled={loading}
                                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-2xl shadow-lg shadow-indigo-200 dark:shadow-none transition-all flex items-center justify-center gap-2 group">
                                 <Save size={20} className="group-hover:scale-110 transition-transform" />
