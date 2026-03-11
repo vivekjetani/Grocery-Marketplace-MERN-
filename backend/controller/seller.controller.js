@@ -486,7 +486,9 @@ export const sendLowStockAlert = async (req, res) => {
       return res.status(400).json({ success: false, message: "No admin recipients have low-stock alerts enabled. Check SMTP → Admin Recipients settings." });
     }
 
-    await sendLowStockAlertEmail(lowStockProducts, adminEmails);
+    sendLowStockAlertEmail(lowStockProducts, adminEmails).catch(err =>
+      console.error("Background low-stock alert email failed:", err)
+    );
 
     res.status(200).json({
       success: true,

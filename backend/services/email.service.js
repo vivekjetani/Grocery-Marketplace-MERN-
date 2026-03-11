@@ -23,15 +23,23 @@ export const createTransporter = async () => {
         socketTimeout: 10000,
         tls: {
             rejectUnauthorized: false
-        }
+        },
+        debug: true, // Enable debug logging
+        logger: true // Log to console
     });
 };
 
 // Send a test email
 export const sendTestEmail = async (toEmail) => {
     try {
-        const transporter = await createTransporter();
         const smtpSettings = await Smtp.findOne();
+        console.log(`[SMTP Test] Attempting to send to ${toEmail} via ${smtpSettings.host}:${smtpSettings.port}`);
+
+        const transporter = await createTransporter();
+
+        console.log("[SMTP Test] Verifying transporter connection...");
+        await transporter.verify();
+        console.log("[SMTP Test] Transporter verified. Sending mail...");
 
         const info = await transporter.sendMail({
             from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,

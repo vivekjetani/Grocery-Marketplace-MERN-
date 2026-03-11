@@ -9,7 +9,9 @@ import { uploadBufferToCloudinary, deleteFromCloudinary, publicIdFromUrl } from 
 const notifyCloudinaryError = async (context, error) => {
   try {
     const { sendCloudinaryErrorEmail } = await import("../services/email.service.js");
-    await sendCloudinaryErrorEmail(context, error.message || String(error));
+    sendCloudinaryErrorEmail(context, error.message || String(error)).catch(e =>
+      console.error("Background cloudinary error email failed:", e)
+    );
   } catch (e) {
     console.error("Failed to send Cloudinary error notification:", e);
   }
