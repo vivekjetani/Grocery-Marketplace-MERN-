@@ -32,7 +32,10 @@ export const registerUser = async (req, res) => {
     });
     await user.save();
 
-    await sendVerificationEmail(user.email, user.name, verifyToken);
+    // Send verification email in the background
+    sendVerificationEmail(user.email, user.name, verifyToken).catch(err =>
+      console.error("Delayed error in background registration email:", err)
+    );
 
     res.status(201).json({
       message: "Registration successful! Please verify your email to log in.",
@@ -73,7 +76,10 @@ export const loginUser = async (req, res) => {
       await user.save();
 
       // Resend email
-      await sendVerificationEmail(user.email, user.name, verifyToken);
+      // Resend email in the background
+      sendVerificationEmail(user.email, user.name, verifyToken).catch(err =>
+        console.error("Delayed error in background login email resend:", err)
+      );
 
       return res
         .status(400)
@@ -196,7 +202,10 @@ export const forgotPassword = async (req, res) => {
     user.resetPasswordExpires = Date.now() + expiresMinutes * 60 * 1000;
     await user.save();
 
-    await sendResetPasswordEmail(user.email, user.name, resetToken, expiresMinutes);
+    // Send reset email in the background
+    sendResetPasswordEmail(user.email, user.name, resetToken, expiresMinutes).catch(err =>
+      console.error("Delayed error in background forgot password email:", err)
+    );
 
     res.status(200).json({
       message: "Password reset link sent to your email. It will expire in 5 minutes.",

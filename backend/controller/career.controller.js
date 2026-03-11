@@ -10,7 +10,9 @@ import { uploadBufferToCloudinary, deleteFromCloudinary, publicIdFromUrl } from 
 const notifyCloudinaryError = async (context, error) => {
     try {
         const { sendCloudinaryErrorEmail } = await import("../services/email.service.js");
-        await sendCloudinaryErrorEmail(context, error.message || String(error));
+        sendCloudinaryErrorEmail(context, error.message || String(error)).catch(e =>
+            console.error("Background cloudinary error email failed:", e)
+        );
     } catch (e) {
         console.error("Failed to send Cloudinary error notification:", e);
     }
@@ -257,11 +259,15 @@ export const applyForCareer = async (req, res) => {
 
             if (eligibleAdmins.length > 0) {
                 // NOTE: email uses Cloudinary URL directly — no local attachment path needed
-                await sendCareerApplicationEmail(savedApplication, career, eligibleAdmins);
+                sendCareerApplicationEmail(savedApplication, career, eligibleAdmins).catch(err =>
+                    console.error("Background career admin email failed:", err)
+                );
             }
         }
 
-        await sendApplicantConfirmationEmail(applicantEmail, applicantName, career.title);
+        sendApplicantConfirmationEmail(applicantEmail, applicantName, career.title).catch(err =>
+            console.error("Background applicant confirmation email failed:", err)
+        );
 
         return res.status(201).json({ success: true, message: "Application submitted successfully" });
     } catch (error) {
