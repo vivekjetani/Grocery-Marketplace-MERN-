@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { dummyProducts } from "../assets/assets";
 import toast from "react-hot-toast";
 import axios from "axios";
+const backendBaseUrl = import.meta.env.VITE_BACKEND_URL ? import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "") : "";
 axios.defaults.withCredentials = true;
-axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
+axios.defaults.baseURL = backendBaseUrl;
 export const AppContext = createContext(null);
 
 export const AppContextProvider = ({ children }) => {
@@ -241,7 +242,7 @@ export const AppContextProvider = ({ children }) => {
     appliedCoupon,
     setAppliedCoupon,
     getImageUrl,
-    backendUrl: import.meta.env.VITE_BACKEND_URL,
+    backendUrl: backendBaseUrl,
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
