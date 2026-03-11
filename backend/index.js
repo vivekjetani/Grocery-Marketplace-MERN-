@@ -48,11 +48,13 @@ app.use(
       const normalizedOrigin = origin.replace(/\/$/, "");
       const normalizedAllowed = allowedOrigins.map(o => o.replace(/\/$/, ""));
 
-      if (normalizedAllowed.indexOf(normalizedOrigin) === -1) {
-        console.error(`CORS Blocked: Incoming origin "${origin}" not in allowed list:`, allowedOrigins);
-        return callback(new Error("CORS policy blocked this origin"), false);
+      // Allow if in list or if it's a vercel dynamic/preview URL
+      if (normalizedAllowed.indexOf(normalizedOrigin) !== -1 || normalizedOrigin.endsWith(".vercel.app")) {
+        return callback(null, true);
       }
-      return callback(null, true);
+
+      console.error(`CORS Blocked: Incoming origin "${origin}" not in allowed list:`, allowedOrigins);
+      return callback(new Error("CORS policy blocked this origin"), false);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
