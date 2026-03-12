@@ -295,14 +295,14 @@ const Cart = () => {
                           +
                         </button>
                       </div>
-                      <span className="md:hidden font-bold text-slate-900 dark:text-white">₹{product.offerPrice}</span>
+                      <span className="md:hidden font-bold text-slate-900 dark:text-white">₹{product.offerPrice} / {product.unit}</span>
                     </div>
 
                     <div className="hidden md:flex flex-col items-end w-full pr-4">
                       <p className="font-black text-xl text-slate-900 dark:text-white">
                         ₹{(product.offerPrice * product.quantity).toFixed(2)}
                       </p>
-                      <p className="text-xs text-slate-400 font-medium">₹{product.offerPrice} each</p>
+                      <p className="text-xs text-slate-400 font-medium">₹{product.offerPrice} / {product.unit}  each</p>
                     </div>
 
                     <div className="md:hidden w-full flex justify-between items-center px-2 pt-2 border-t border-slate-100 dark:border-slate-700/50">
