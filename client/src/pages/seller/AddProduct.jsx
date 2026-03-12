@@ -6,7 +6,7 @@ import { X, Plus, Upload, Download, FileSpreadsheet, AlertCircle, CheckCircle2, 
 import { motion } from "framer-motion";
 
 const AddProduct = () => {
-  const { axios, categories: contextCategories, fetchProducts } = useContext(AppContext);
+  const { axios, categories: contextCategories, fetchProducts, backendUrl } = useContext(AppContext);
   const [files, setFiles] = useState([null]); // Start with one upload slot
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
