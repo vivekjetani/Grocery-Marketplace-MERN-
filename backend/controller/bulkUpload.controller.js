@@ -82,14 +82,18 @@ export const bulkUploadProducts = async (req, res) => {
         const imagesList = product_image.split(",").map(img => img.trim());
         
         for (const imgPath of imagesList) {
+          // Clean path prefix if present
+          let cleanPath = imgPath;
+          if (imgPath.startsWith('/upload/')) {
+            cleanPath = imgPath.replace('/upload/', '');
+          } else if (imgPath.startsWith('/uploads/')) {
+            cleanPath = imgPath.replace('/uploads/', '');
+          } else if (imgPath.startsWith('uploads/')) {
+            cleanPath = imgPath.replace('uploads/', '');
+          }
+
           if (storageType === 'cloudinary') {
             try {
-              // Extract relative path if needed, e.g., if it starts with /upload/
-              let cleanPath = imgPath;
-              if (imgPath.startsWith('/upload/')) {
-                  cleanPath = imgPath.replace('/upload/', '');
-              }
-              
               const absolutePath = path.join(process.cwd(), 'uploads', cleanPath);
               
               if (fs.existsSync(absolutePath)) {
@@ -104,16 +108,16 @@ export const bulkUploadProducts = async (req, res) => {
                 });
                 finalImages.push(result.secure_url);
               } else {
-                // If it's a URL or something we can't find locally, maybe skip or try as URL
+                // If we can't find locally, keep original (might be an external URL)
                 finalImages.push(imgPath); 
               }
             } catch (err) {
               console.error(`Failed to upload ${imgPath} to Cloudinary:`, err);
-              finalImages.push(imgPath); // Fallback to original
+              finalImages.push(imgPath);
             }
           } else {
-            // Local storage: just save the path
-            finalImages.push(imgPath);
+            // Local storage: use the cleaned filename
+            finalImages.push(cleanPath);
           }
         }
       }
