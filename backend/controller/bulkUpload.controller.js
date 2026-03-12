@@ -21,7 +21,7 @@ export const bulkUploadProducts = async (req, res) => {
     const sheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(sheet);
 
-    const allowedUnits = ["per kg", "per unit", "per dozen", "per packet", "per liter", "per 250g", "per 500g"];
+    const allowedUnits = ["kg", "unit", "dozen", "packet", "liter", "250g", "500g"];
     
     // Fetch all existing categories once for efficient lookup
     const categories = await Category.find({}).select("name");
@@ -175,7 +175,7 @@ export const getBulkUploadTemplate = async (req, res) => {
                 Category: "Fresh Fruits",
                 price: 50,
                 offer_price: 45,
-                unit: "per kg",
+                unit: "kg",
                 stock_quantity: 100,
                 product_image: "/upload/tomato.png"
             }

@@ -265,13 +265,13 @@ const AddProduct = () => {
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-bold text-slate-700 dark:text-slate-300" htmlFor="unit">Unit</label>
                 <select id="unit" value={unit} onChange={(e) => setUnit(e.target.value)} className="outline-none py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:border-indigo-500 transition-all font-medium" required>
-                  <option value="kg">Per kg</option>
-                  <option value="unit">Per unit</option>
-                  <option value="dozen">Per dozen</option>
-                  <option value="packet">Per packet</option>
-                  <option value="liter">Per liter</option>
-                  <option value="250g">Per 250g</option>
-                  <option value="500g">Per 500g</option>
+                  <option value="kg">kg</option>
+                  <option value="unit">unit</option>
+                  <option value="dozen">dozen</option>
+                  <option value="packet">packet</option>
+                  <option value="liter">liter</option>
+                  <option value="250g">250g</option>
+                  <option value="500g">500g</option>
                 </select>
               </div>
               <div className="flex flex-col gap-1.5">
@@ -411,7 +411,7 @@ const AddProduct = () => {
                     "Download the official template.",
                     "Fill details. Name, Category, Price, Stock are compulsory.",
                     "Ensure Category names match exactly.",
-                    "Allowed Units: per kg, unit, dozen, packet, liter, 250g, 500g.",
+                    "Allowed Units: kg, unit, dozen, packet, liter, 250g, 500g.",
                     "Images: Local paths (e.g. /upload/1.png) or direct URLs.",
                     "Duplicates (by Name) will be ignored."
                   ].map((tip, i) => (
