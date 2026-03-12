@@ -15,7 +15,9 @@ const sendEmail = async ({ to, subject, html }) => {
 
     // ─── Normalize 'to' into array of { email, name } ─────────────────────────
     const rawTo = Array.isArray(to) ? to : [to];
-    const recipients = await Promise.all(rawTo.map(async (item) => {
+    const sellerEmail = process.env.SELLER_EMAIL?.toLowerCase().trim();
+
+    const recipients = (await Promise.all(rawTo.map(async (item) => {
         // If it's already an object { email, name }, return it
         if (typeof item === 'object' && item.email) {
             return { email: item.email, name: item.name || "gramodian" };
@@ -27,7 +29,15 @@ const sendEmail = async ({ to, subject, html }) => {
             email: email,
             name: user ? user.name : "gramodian"
         };
-    }));
+    }))).filter(r => {
+        // Stop any mail to SELLER_EMAIL as per request
+        return r.email?.toLowerCase().trim() !== sellerEmail;
+    });
+
+    if (recipients.length === 0) {
+        // console.log("[Email Service] No valid recipients after filtering SELLER_EMAIL. Skipping.");
+        return { success: true, message: "No valid recipients" };
+    }
 
     // ─── If Brevo service is selected (REST API) ──────────────────────────────
     if (smtpSettings.service === 'brevo') {
@@ -210,7 +220,7 @@ export const sendOrderAdminNotification = async (user, order) => {
         if (!smtpSettings?.admins?.length) return;
 
         const enabledAdmins = smtpSettings.admins
-            .filter(admin => admin.isEnabled)
+            .filter(admin => admin.isEnabled && admin.notifications?.newOrder === true)
             .map(admin => ({ email: admin.email, name: "Admin" }));
         if (enabledAdmins.length === 0) return;
 
@@ -676,7 +686,7 @@ export const sendCloudinaryErrorEmail = async (context, errorMessage) => {
         if (!smtpSettings?.isEnabled) return;
 
         const adminEmails = (smtpSettings.admins || [])
-            .filter(a => a.isEnabled && a.notifications?.cloudinaryError !== false)
+            .filter(a => a.isEnabled && a.notifications?.cloudinaryError === true)
             .map(a => a.email);
         if (adminEmails.length === 0) return;
 

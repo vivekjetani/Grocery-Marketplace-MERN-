@@ -35,17 +35,22 @@ const runLowStockCheck = async (source = 'cron') => {
     console.log(`--- [Low-Stock Alert] Running check (triggered by: ${source}) ---`);
     try {
         const smtp = await Smtp.findOne();
-        if (!smtp || !smtp.isEnabled) {
-            console.warn('[Low-Stock Alert] SMTP disabled — skipping.');
+        if (!smtp || !smtp.isEnabled || smtp.isLowStockAlertEnabled === false) {
+            console.log('[Low-Stock Alert] Skipped: SMTP or Low-Stock alerts disabled globally.');
             return;
         }
 
         // Admins who are enabled, want low-stock alerts, and whose schedule fires now
         const eligibleAdmins = (smtp.admins || []).filter(a => {
             if (!a.isEnabled) return false;
+            // Explicitly exclude the admin email from .env (case-insensitive)
+            const adminEmail = a.email?.toLowerCase().trim();
+            const sellerEmail = process.env.SELLER_EMAIL?.toLowerCase().trim();
+            if (sellerEmail && adminEmail === sellerEmail) return false;
+            
             if (source === 'cron' && !shouldSendNow(a)) return false;
-            // Check notification type toggle (default true for lowStock)
-            const wantsLowStock = a.notifications?.lowStock !== false;
+            // Check notification type toggle
+            const wantsLowStock = a.notifications?.lowStock === true;
             return wantsLowStock;
         });
 
@@ -66,10 +71,9 @@ const runLowStockCheck = async (source = 'cron') => {
         const adminEmails = eligibleAdmins.map(a => a.email);
         await sendLowStockAlertEmail(lowStockProducts, adminEmails);
 
-        console.log(`[Low-Stock Alert] ✅ Sent to: ${adminEmails.join(', ')}`);
-        console.log(`[Low-Stock Alert] Products: ${lowStockProducts.map(p => `${p.name}(${p.stockQuantity})`).join(', ')}`);
+        console.log(`[Low-Stock Alert] ✅ Success: ${lowStockProducts.length} items reported to ${adminEmails.length} admin(s).`);
     } catch (error) {
-        console.error('[Low-Stock Alert] Error:', error);
+        console.error('[Low-Stock Alert] ❌ Error:', error.message);
     }
 };
 

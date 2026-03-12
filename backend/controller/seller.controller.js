@@ -191,7 +191,7 @@ export const getSmtpSettings = async (req, res) => {
 // update SMTP settings: /api/seller/smtp
 export const updateSmtpSettings = async (req, res) => {
   try {
-    const { host, port, user, password, admins, fromEmail, isEnabled, service } = req.body;
+    const { host, port, user, password, admins, fromEmail, isEnabled, isLowStockAlertEnabled, service } = req.body;
     let smtp = await Smtp.findOne();
     if (smtp) {
       smtp.host = host;
@@ -204,9 +204,11 @@ export const updateSmtpSettings = async (req, res) => {
       smtp.admins = admins;
       smtp.fromEmail = fromEmail;
       smtp.isEnabled = isEnabled;
+      smtp.isLowStockAlertEnabled = isLowStockAlertEnabled;
+      smtp.service = service;
       await smtp.save();
     } else {
-      smtp = await Smtp.create({ host, port, user, password, admins, fromEmail, isEnabled, service });
+      smtp = await Smtp.create({ host, port, user, password, admins, fromEmail, isEnabled, isLowStockAlertEnabled, service });
     }
     res.status(200).json({ message: "SMTP settings updated", success: true, smtp });
   } catch (error) {
@@ -474,13 +476,19 @@ export const sendLowStockAlert = async (req, res) => {
     }
 
     const smtp = await Smtp.findOne();
-    if (!smtp || !smtp.isEnabled) {
-      return res.status(400).json({ success: false, message: "SMTP is not configured or disabled." });
+    if (!smtp || !smtp.isEnabled || smtp.isLowStockAlertEnabled === false) {
+      return res.status(400).json({ success: false, message: "SMTP or Low-Stock alerts are disabled globally." });
     }
 
     // Only send to admins who are enabled AND have lowStock notifications on
+    const sellerEmail = process.env.SELLER_EMAIL?.toLowerCase().trim();
     const adminEmails = (smtp.admins || [])
-      .filter(a => a.isEnabled && a.notifications?.lowStock !== false)
+      .filter(a => {
+          if (!a.isEnabled) return false;
+          const aEmail = a.email?.toLowerCase().trim();
+          if (sellerEmail && aEmail === sellerEmail) return false;
+          return a.notifications?.lowStock === true;
+      })
       .map(a => a.email);
 
     if (adminEmails.length === 0) {
