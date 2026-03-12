@@ -20,8 +20,10 @@ import {
   Briefcase,
   MapPin,
   Send,
-  Newspaper
+  Newspaper,
+  Upload
 } from "lucide-react";
+import { useState, useEffect, useContext } from "react";
 
 const SellerLayout = () => {
   const { isSeller, setIsSeller, axios, navigate, isDarkMode, setIsDarkMode } = useAppContext();

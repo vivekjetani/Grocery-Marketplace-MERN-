@@ -26,8 +26,12 @@ import {
   submitInquiry,
   getInquiries,
   deleteInquiry,
+  // Bulk Upload
+  bulkUploadProducts,
+  getBulkUploadTemplate,
 } from "../controller/seller.controller.js";
 import { authSeller } from "../middlewares/authSeller.js";
+import { memoryUpload } from "../config/multer.js"; // Ensure this import is correct
 const router = express.Router();
 
 router.post("/login", sellerLogin);
@@ -58,5 +62,8 @@ router.post("/inquiry", submitInquiry);
 router.get("/inquiries", authSeller, getInquiries);
 router.delete("/inquiry/:id", authSeller, deleteInquiry);
 
-export default router;
+// Bulk upload
+router.post("/bulk-upload", authSeller, memoryUpload.single("file"), bulkUploadProducts);
+router.get("/bulk-upload-template", authSeller, getBulkUploadTemplate);
 
+export default router;

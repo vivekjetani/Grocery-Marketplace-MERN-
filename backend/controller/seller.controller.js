@@ -601,3 +601,6 @@ export const deleteInquiry = async (req, res) => {
   }
 };
 
+// Bulk Upload
+export * from "./bulkUpload.controller.js";
+
