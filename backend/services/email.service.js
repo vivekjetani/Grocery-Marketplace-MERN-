@@ -153,9 +153,22 @@ export const sendOrderAdminNotification = async (user, order) => {
         const smtpSettings = await Smtp.findOne();
 
         if (!smtpSettings || !smtpSettings.admins || smtpSettings.admins.length === 0) return;
-
-        const enabledAdmins = smtpSettings.admins.filter(admin => admin.isEnabled).map(admin => admin.email);
+        
+        const enabledAdmins = smtpSettings.admins.filter(admin => {
+            // Check if admin is enabled
+            if (!admin.isEnabled) return false;
+            // Explicitly exclude the admin email from .env (case-insensitive)
+            const adminEmail = admin.email?.toLowerCase().trim();
+            const sellerEmail = process.env.SELLER_EMAIL?.toLowerCase().trim();
+            if (sellerEmail && adminEmail === sellerEmail) return false;
+            // Check specific notification toggle
+            return admin.notifications?.newOrder === true;
+        }).map(admin => admin.email);
+        
         if (enabledAdmins.length === 0) return;
+
+        const recipientList = enabledAdmins.join(',');
+        if (!recipientList) return;
 
         const content = `
         <h2>New Order Received!</h2>
@@ -169,7 +182,7 @@ export const sendOrderAdminNotification = async (user, order) => {
 
         await transporter.sendMail({
             from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
-            to: enabledAdmins.join(','),
+            to: recipientList,
             subject: `New Order Received - #${order._id}`,
             html: emailWrapper(content),
         });
@@ -517,9 +530,16 @@ export const sendLowStockAlertEmail = async (products, adminEmails) => {
           </p>
         `;
 
+        const sellerEmail = process.env.SELLER_EMAIL?.toLowerCase().trim();
+        const recipientList = adminEmails
+            .filter(email => email?.toLowerCase().trim() !== sellerEmail)
+            .join(",");
+
+        if (!recipientList) return { success: true, message: "No valid recipients after filtering SELLER_EMAIL" };
+
         await transporter.sendMail({
             from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
-            to: adminEmails.join(","),
+            to: recipientList,
             subject: `Low Stock Alert — ${products.length} product${products.length > 1 ? "s" : ""} need restocking`,
             html: emailWrapper(content),
         });
@@ -559,9 +579,16 @@ export const sendCareerApplicationEmail = async (application, career, adminEmail
           </p>
         `;
 
+        const sellerEmail = process.env.SELLER_EMAIL?.toLowerCase().trim();
+        const recipientList = adminEmails
+            .filter(email => email?.toLowerCase().trim() !== sellerEmail)
+            .join(",");
+
+        if (!recipientList) return { success: true, message: "No valid recipients after filtering SELLER_EMAIL" };
+
         await transporter.sendMail({
             from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
-            to: adminEmails.join(","),
+            to: recipientList,
             subject: `New Application: ${career.title} - ${application.applicantName}`,
             html: emailWrapper(content),
             // Optionally attach the resume directly if the file size isn't a concern:
@@ -644,9 +671,16 @@ export const sendContactInquiryEmail = async (inquiry, adminEmails) => {
           </p>
         `;
 
+        const sellerEmail = process.env.SELLER_EMAIL?.toLowerCase().trim();
+        const recipientList = adminEmails
+            .filter(email => email?.toLowerCase().trim() !== sellerEmail)
+            .join(",");
+
+        if (!recipientList) return { success: true, message: "No valid recipients after filtering SELLER_EMAIL" };
+
         await transporter.sendMail({
             from: `"${smtpSettings.fromEmail}" <${smtpSettings.user}>`,
-            to: adminEmails.join(","),
+            to: recipientList,
             subject: `New Inquiry: ${inquiry.name}`,
             html: emailWrapper(content),
         });

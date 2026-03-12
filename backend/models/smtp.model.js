@@ -47,6 +47,10 @@ const smtpSchema = new mongoose.Schema({
     isEnabled: {
         type: Boolean,
         default: true,
+    },
+    isLowStockAlertEnabled: {
+        type: Boolean,
+        default: true,
     }
 }, { timestamps: true });
 
