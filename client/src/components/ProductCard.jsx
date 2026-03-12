@@ -147,6 +147,7 @@ const ProductCard = ({ product }) => {
             <div className="flex flex-col">
               <span className={`text-xl font-bold ${isOutOfStock ? "text-slate-400 dark:text-slate-500" : "text-slate-900 dark:text-white"}`}>
                 ₹{product.offerPrice.toFixed(2)}
+                <span className="text-xs font-medium ml-1 opacity-60">/ {product.unit}</span>
               </span>
               {product.price > product.offerPrice && (
                 <span className="text-xs font-medium text-slate-400 line-through">₹{product.price.toFixed(2)}</span>

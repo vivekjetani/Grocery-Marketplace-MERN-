@@ -134,13 +134,13 @@ const AddProduct = () => {
           <div className="flex-1 flex flex-col gap-1 min-w-[120px]">
             <label className="text-base font-medium text-slate-900 dark:text-white" htmlFor="unit">Unit</label>
             <select id="unit" value={unit} onChange={(e) => setUnit(e.target.value)} className="outline-none md:py-2.5 py-2 px-3 rounded border border-slate-500/40 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" required>
-              <option value="kg">Per kg</option>
-              <option value="unit">Per unit</option>
-              <option value="dozen">Per dozen</option>
-              <option value="packet">Per packet</option>
-              <option value="liter">Per liter</option>
-              <option value="250g">Per 250g</option>
-              <option value="500g">Per 500g</option>
+              <option value="kg">kg</option>
+              <option value="unit">unit</option>
+              <option value="dozen">dozen</option>
+              <option value="packet">packet</option>
+              <option value="liter">liter</option>
+              <option value="250g">250g</option>
+              <option value="500g">500g</option>
             </select>
           </div>
         </div>
